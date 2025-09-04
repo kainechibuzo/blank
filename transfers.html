@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transfers — James Sport</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: #eee;
+      line-height: 1.6;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #000;
+      padding: 15px 30px;
+      border-bottom: 2px solid #e63946;
+    }
+    header h1 {
+      color: #e63946;
+      margin: 0;
+    }
+    header nav a {
+      color: #bbb;
+      margin-left: 15px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+    header nav a.active,
+    header nav a:hover {
+      color: #e63946;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px;
+    }
+    .toolbar input, .toolbar select {
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #333;
+      background: #1a1a1a;
+      color: #eee;
+    }
+    table {
+      width: 95%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #111;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 15px rgba(0,0,0,0.8);
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #333; /* demarcation lines */
+    }
+    th {
+      background: #e63946;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    td {
+      color: #ddd;
+    }
+    tr:hover {
+      background: #1c1c1c;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #000;
+      margin-top: 40px;
+      font-size: 0.9rem;
+      color: #888;
+      border-top: 2px solid #e63946;
+    }
+    #backToTop {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 10px 15px;
+      background: #e63946;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+      box-shadow: 0 0 10px rgba(230,57,70,0.6);
+    }
+    #backToTop:hover {
+      background: #c72c39;
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header>
+    <h1>James Sport Transfers</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="transfers.html" class="active">Transfers</a>
+      <a href="news.html">News</a>
+      <a href="analysis.html">Analysis</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <!-- ===== Toolbar ===== -->
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search transfers...">
+    <select id="filter">
+      <option value="all">All</option>
+      <option value="loan">Loan</option>
+      <option value="permanent">Permanent</option>
+    </select>
+  </div>
+
+  <!-- ===== Table ===== -->
+  <main>
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>From</th>
+          <th>To</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Contract</th>
+          <th>Fee</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <button id="backToTop">↑</button>
+
+  <!-- ===== Script ===== -->
+  <script>
+    const API_KEY = "168b256dfb2f93e4cdda39421e9edb63";
+    const tableBody = document.querySelector("#tbl tbody");
+
+    async function fetchTransfers() {
+      try {
+        const res = await fetch("https://v3.football.api-sports.io/transfers", {
+          method: "GET",
+          headers: {
+            "x-apisports-key": API_KEY
+          }
+        });
+        const json = await res.json();
+        displayTransfers(json.response);
+      } catch (err) {
+        console.error("Error fetching transfers:", err);
+      }
+    }
+
+    function displayTransfers(transfers) {
+      tableBody.innerHTML = "";
+      transfers.slice(0, 20).forEach(t => {
+        const transfer = t.transfers[0] || {};
+        const player = t.player?.name || "Unknown";
+        const from = transfer.teams?.out?.name || "-";
+        const to = transfer.teams?.in?.name || "-";
+        const type = transfer.type || "N/A";
+        const status = transfer.status || "N/A";
+        const contract = transfer.contract?.end || "N/A";
+        const fee = transfer.fee || "Free";
+        const date = transfer.date || "N/A";
+
+        const row = `<tr>
+          <td>${player}</td>
+          <td>${from}</td>
+          <td>${to}</td>
+          <td>${type}</td>
+          <td>${status}</td>
+          <td>${contract}</td>
+          <td>${fee}</td>
+          <td>${date}</td>
+        </tr>`;
+        tableBody.insertAdjacentHTML("beforeend", row);
+      });
+    }
+
+    // Back-to-top
+    const backBtn = document.getElementById("backToTop");
+    window.addEventListener("scroll", () => {
+      backBtn.style.display = window.scrollY > 200 ? "block" : "none";
+    });
+    backBtn.addEventListener("click", () => window.scrollTo({top:0,behavior:"smooth"}));
+
+    // Init
+    fetchTransfers();
+  </script>
+
+  <!-- ===== Footer ===== -->
+  <footer>
+    <p>© 2025 James Sport. All rights reserved.</p>
+  </footer>
+</body>
+</html>
+
+

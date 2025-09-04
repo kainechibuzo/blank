@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Football Analysis - James Sports Official</title>
+  <meta name="description" content="In-depth tactical football analysis and insights." />
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #111;
+      color: #eee;
+    }
+    header {
+      background: #000;
+      padding: 15px;
+      text-align: center;
+      border-bottom: 2px solid #8b0000;
+    }
+    header h1 {
+      margin: 0;
+      color: #e63946;
+    }
+    nav a {
+      color: #eee;
+      margin: 0 10px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a.active, nav a:hover {
+      color: #e63946;
+    }
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #1a1a1a;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    .card img {
+      width: 100%;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .card h3, article h2 {
+      margin-top: 0;
+      color: #e63946;
+    }
+    .card p, article p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    .hidden {
+      display: none;
+      margin-top: 10px;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 10px;
+      background: #8b0000;
+      color: #fff;
+      padding: 8px 15px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #e63946;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      margin-top: 30px;
+      background: #000;
+      border-top: 2px solid #8b0000;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>James Sports Official</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="transfers.html">Transfers</a>
+      <a href="news.html">News</a>
+      <a href="analysis.html" class="active">Analysis</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h2 style="color:#e63946;">Tactical Analysis</h2>
+    <p>Deep breakdowns of Europe’s biggest clubs.</p>
+
+    <section class="grid">
+
+      <!-- Manchester City -->
+      <article class="card">
+        <img src="images/mancity.jpg" alt="Manchester City struggles">
+        <h2>Manchester City’s Struggles: A Tactical Breakdown</h2>
+        <p><strong>By Football News Official Analyst</strong></p>
+
+        <p>
+          For years, Manchester City have been the gold standard of European football. Their system under Pep Guardiola seemed untouchable—possession dominance, relentless pressing, and a forward line capable of suffocating opponents. Yet this season tells a different story. City look more human, more vulnerable, and—most surprisingly—predictable.
+        </p>
+
+        <div id="mancity" class="hidden">
+          <h3>The Predictability Problem</h3>
+          <p>
+            Watching City now, the first thing that stands out is how opponents have adapted. Low-block defenses close central channels and force City wide, leading to an over-reliance on crosses to Haaland. Despite his talent, he is often left isolated.
+          </p>
+
+          <h3>Injuries and Midfield Imbalance</h3>
+          <p>
+            The absence of Kevin De Bruyne has been damaging. Without his vertical passing, City’s buildup feels slower. Foden and Cherki step in, but lack KDB’s control. Rodri has been overworked, and when pressed, City’s structure collapses.
+          </p>
+
+          <h3>Defensive Vulnerabilities</h3>
+          <p>
+            Laporte’s departure left Guardiola without a reliable left-footed center-back. Stones’ inconsistency adds pressure, and transitions often expose Walker and Gvardiol. Counterattacking teams now exploit City with surprising ease.
+          </p>
+
+          <h3>Comparisons to Rivals</h3>
+          <p>
+            Liverpool’s refreshed attack, Arsenal’s defensive solidity, PSG’s pressing intensity, and Barcelona’s youthful energy highlight City’s current stagnation. Once the innovators, City are now being caught up.
+          </p>
+
+          <h3>What Next for Guardiola?</h3>
+          <p>
+            Guardiola has reinvented his sides before. But if he fails to adapt quickly, City may lose their aura of inevitability. The coming months could define his legacy at the Etihad.
+          </p>
+
+          <p><em>Manchester City remain contenders, but no longer inevitable. Their aura has cracked—and recovery will demand reinvention.</em></p>
+        </div>
+        <a href="#" class="btn" onclick="toggleContent(event, 'mancity')">Read More</a>
+      </article>
+
+      <!-- Liverpool -->
+      <article class="card">
+        <img src="images/liverpool.jpg" alt="Liverpool with Isak">
+        <h3>Liverpool: The Isak Effect</h3>
+        <p>
+          Alexander Isak’s arrival has reshaped Slot’s frontline, adding height, composure, and link-up play.
+        </p>
+        <div id="liverpool" class="hidden">
+          <p>
+            Slot’s 4-2-3-1 sees Isak drop deep, freeing Salah and Ekitike while Wirtz ghosts in behind. Szoboszlai and Mac Allister exploit spaces, and Frimpong overlaps dangerously. Liverpool now look fluid, unpredictable, and harder to defend against. Defensively, they still struggle in transitions, but attack-wise they look reborn.
+          </p>
+        </div>
+        <a href="#" class="btn" onclick="toggleContent(event, 'liverpool')">Read More</a>
+      </article>
+
+      <!-- Arsenal -->
+      <article class="card">
+        <img src="images/arsenal.jpg" alt="Arsenal low block">
+        <h3>Arsenal: Mastering the Low Block</h3>
+        <p>
+          Arteta’s side now combines defensive resilience with attacking efficiency, correcting last year’s flaws.
+        </p>
+        <div id="arsenal" class="hidden">
+          <p>
+            Declan Rice anchors midfield, while Saliba and Gabriel dominate defensively. Gyökeres’ movement creates space for Ødegaard, who dictates attacks. Arsenal can control possession or sit deep, making them genuine title contenders.
+          </p>
+        </div>
+        <a href="#" class="btn" onclick="toggleContent(event, 'arsenal')">Read More</a>
+      </article>
+
+      <!-- PSG -->
+      <article class="card">
+        <img src="images/psg.jpg" alt="PSG dominance">
+        <h3>PSG: Dominance with Discipline</h3>
+        <p>
+          Enrique has forged a more structured PSG, built on pressing, intensity, and collective balance.
+        </p>
+        <div id="psg" class="hidden">
+          <p>
+            Doue thrives creatively, while Vitinha and Joao Neves provide balance. PSG’s pressing and transitions are sharper than ever, and they finally look like a Champions League-winning unit rather than just a group of stars.
+          </p>
+        </div>
+        <a href="#" class="btn" onclick="toggleContent(event, 'psg')">Read More</a>
+      </article>
+
+      <!-- Barcelona -->
+      <article class="card">
+        <img src="images/barcelona.jpg" alt="Lamine Yamal at Barcelona">
+        <h3>Lamine Yamal: Barcelona’s New Gem</h3>
+        <p>
+          At just 18, Lamine Yamal is stretching defenses, providing width, and offering intelligence beyond his years.
+        </p>
+        <div id="barca" class="hidden">
+          <p>
+            His dribbling opens space for Lewandowski and Pedri. Yamal balances flair with maturity, signaling the future of Barcelona’s revival as they rebuild around youth.
+          </p>
+        </div>
+        <a href="#" class="btn" onclick="toggleContent(event, 'barca')">Read More</a>
+      </article>
+
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Football News Official | Tactical Analysis</p>
+  </footer>
+
+  <script>
+    function toggleContent(event, id) {
+      event.preventDefault();
+      const content = document.getElementById(id);
+      content.classList.toggle("hidden");
+      event.target.textContent = content.classList.contains("hidden") ? "Read More" : "Read Less";
+    }
+  </script>
+</body>
+</html>
+
+

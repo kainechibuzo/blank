@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Football News - James Sports Official</title>
+  <meta name="description" content="Latest football news, match updates, and exclusive stories." />
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Extra styles for collapsible articles */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .card {
+      background: #111;
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    }
+    .card img {
+      width: 100%;
+      border-radius: 8px;
+      margin-bottom: 0.8rem;
+    }
+    .article-content {
+      display: none;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #1a1a1a;
+      border-radius: 8px;
+      color: #ddd;
+      line-height: 1.6;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .article-content img {
+      max-width: 100%;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 0.8rem;
+      padding: 0.6rem 1.2rem;
+      background: #e63946;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: 600;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #b82f39;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0;}
+      to {opacity: 1;}
+    }
+  </style>
+</head>
+<body>
+  <!-- ===== Header ===== -->
+  <header>
+    <h1>James News Official</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="transfers.html">Transfers</a>
+      <a href="news.html" class="active">News</a>
+      <a href="analysis.html">Analysis</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <!-- ===== News Section ===== -->
+  <main class="container">
+    <section class="hero">
+      <h2>Latest Football News</h2>
+      <p>Breaking stories and exclusive coverage from Europe and beyond.</p>
+    </section>
+
+    <section class="grid">
+      <!-- Laporte -->
+      <article class="card">
+        <img src="images/laporte.png" alt="Aymeric Laporte returns to Bilbao">
+        <h3>Aymeric Laporte Returns to Athletic Club</h3>
+        <p>Laporte has completed a free transfer move from Al Hilal back to his boyhood club, Athletic Bilbao.</p>
+        <button class="btn" onclick="toggleArticle('laporte')">Read More</button>
+        <div id="laporte" class="article-content">
+          <img src="https://source.unsplash.com/800x500/?stadium" alt="Athletic Club stadium">
+          <p><strong>Date:</strong> September 2025</p>
+          <p>Aymeric Laporte has officially returned to Athletic Club, sealing an emotional free transfer move from Saudi Arabian side Al Hilal back to the Basque Country.</p>
+          <p>The Spain international first broke into senior football at Bilbao in 2012 before moving to Manchester City in 2018, where he won multiple Premier League titles. After a stint at Al Hilal, Laporte is back home, signing a three-year contract.</p>
+          <p>Laporte said: <em>“This is home for me. I want to give everything for this team again and make the fans proud.”</em></p>
+          <p>Athletic Club president Jon Uriarte called the move “a statement of intent,” believing Laporte’s leadership will boost their European qualification hopes.</p>
+        </div>
+      </article>
+
+      <!-- Elliott -->
+      <article class="card">
+         <img src="images/elliot.png"alt="Harvey Elliott joins Aston Villa">
+        <h3>Harvey Elliott Joins Aston Villa on Loan</h3>
+        <p>Liverpool’s midfielder Harvey Elliott has secured a one-year loan to Aston Villa.</p>
+        <button class="btn" onclick="toggleArticle('elliott')">Read More</button>
+        <div id="elliott" class="article-content">
+          <img src="https://source.unsplash.com/800x500/?aston-villa,football" alt="Aston Villa stadium">
+          <p><strong>Date:</strong> September 2025</p>
+          <p>Elliott, regarded as one of England’s brightest young talents, will spend the 2025/26 season on loan at Aston Villa. The move is seen as an opportunity for him to gain more first-team minutes.</p>
+          <p>Aston Villa coach Unai Emery welcomed the signing, saying Elliott’s creativity will be key to their attacking play.</p>
+        </div>
+      </article>
+
+      <!-- Barcelona -->
+      <article class="card">
+        <img src="images/camp noa.png" alt="Barcelona new Camp Nou">
+        <h3>Barcelona Confirm New Stadium Opening</h3>
+        <p>The renovated Camp Nou will officially reopen this month after years of construction.</p>
+        <button class="btn" onclick="toggleArticle('barca')">Read More</button>
+        <div id="barca" class="article-content">
+          <img src="https://source.unsplash.com/800x500/?camp-nou,barcelona" alt="Camp Nou stadium">
+          <p><strong>Date:</strong> September 2025</p>
+          <p>Barcelona has confirmed the reopening of the renovated Camp Nou, a project that cost over €1.5 billion. The stadium now has a capacity of 105,000, with state-of-the-art facilities.</p>
+          <p>Club president Joan Laporta called it “the start of a new era for Barça,” with a grand ceremony planned ahead of their La Liga matchday.</p>
+        </div>
+      </article>
+
+      <!-- UEFA -->
+      <article class="card">
+        <img src="images/nations league.png" alt="UEFA Nations League">
+        <h3>UEFA Nations League Fixtures Released</h3>
+        <p>UEFA has confirmed the full schedule for the 2025/26 Nations League campaign.</p>
+        <button class="btn" onclick="toggleArticle('uefa')">Read More</button>
+        <div id="uefa" class="article-content">
+          <img src="https://source.unsplash.com/800x500/?uefa,nations-league" alt="UEFA Nations League">
+          <p><strong>Date:</strong> September 2025</p>
+          <p>The UEFA Nations League draw has produced several exciting clashes, with France set to face Germany, while England will meet Spain in the group stage.</p>
+          <p>The competition kicks off in October 2025, with the finals scheduled for summer 2026.</p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer>
+    <p>&copy; 2025 Football News Official</p>
+  </footer>
+
+  <!-- ===== Script ===== -->
+  <script>
+    function toggleArticle(id) {
+      const el = document.getElementById(id);
+      el.style.display = (el.style.display === "block") ? "none" : "block";
+    }
+  </script>
+</body>
+</html>
+
+
