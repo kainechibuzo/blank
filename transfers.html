@@ -1,129 +1,165 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Transfers — James Sport</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Transfers - James Sports Official</title>
+  <meta name="description" content="Live football transfers, contract updates, and market news." />
+  <link rel="stylesheet" href="style.css" />
   <style>
     body {
       margin: 0;
       font-family: Arial, sans-serif;
       background: #0d0d0d;
-      color: #f1f1f1;
+      color: #f0f0f0;
     }
-
     header {
-      background: #111;
-      padding: 15px;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #e63946;
-      border-bottom: 2px solid #222;
+      background: #000;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e63946;
     }
-
+    header h1 {
+      color: #e63946;
+      font-size: 1.8rem;
+      margin: 0;
+    }
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      margin-left: 1.2rem;
+      font-weight: bold;
+    }
+    nav a:hover, nav a.active {
+      color: #e63946;
+    }
+    main {
+      padding: 2rem;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: #e63946;
+    }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 20px auto;
-      background: #1a1a1a;
-      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+      background: #111;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 0 12px rgba(0,0,0,0.6);
     }
-
     th, td {
-      padding: 12px 15px;
-      border: 1px solid #333;
+      padding: 1rem;
       text-align: left;
+      border: 1px solid #333;
     }
-
     th {
-      background: #222;
+      background: #1a1a1a;
       color: #e63946;
-      text-transform: uppercase;
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
-
     tr:nth-child(even) {
-      background: #141414;
+      background: #161616;
     }
-
     tr:hover {
       background: #222;
-      transition: 0.2s ease-in-out;
     }
-
-    .loading {
+    footer {
+      background: #000;
       text-align: center;
-      padding: 20px;
-      font-size: 1.2rem;
-      color: #888;
+      padding: 1rem;
+      border-top: 2px solid #e63946;
+      margin-top: 2rem;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-  <header>⚡ Live Football Transfers</header>
+  <!-- ===== Header ===== -->
+  <header>
+    <h1>James Sports</h1>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="transfers.html" class="active">Transfers</a>
+      <a href="news.html">News</a>
+      <a href="analysis.html">Analysis</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Player</th>
-        <th>From</th>
-        <th>To</th>
-        <th>Status</th>
-        <th>Contract</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="transfers">
-      <tr><td colspan="6" class="loading">Loading transfers...</td></tr>
-    </tbody>
-  </table>
+  <!-- ===== Transfers Section ===== -->
+  <main>
+    <h2>Live Football Transfers</h2>
+    <table id="transfersTable">
+      <thead>
+        <tr>
+          <th>Player</th>
+          <th>From Club</th>
+          <th>To Club</th>
+          <th>Status</th>
+          <th>Contract</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="6">Loading live transfers...</td></tr>
+      </tbody>
+    </table>
+  </main>
 
+  <!-- ===== Footer ===== -->
+  <footer>
+    <p>&copy; 2025 James Sports Official</p>
+  </footer>
+
+  <!-- ===== Script ===== -->
   <script>
-    const apiKey = "168b256dfb2f93e4cdda39421e9edb63";
-    const url = "https://v3.football.api-sports.io/transfers?league=39&season=2025"; // Premier League example
+    async function loadTransfers() {
+      try {
+        const res = await fetch("http://localhost:5000/transfers"); // proxy server
+        const data = await res.json();
 
-    fetch(url, {
-      method: "GET",
-      headers: {
-        "x-apisports-key": apiKey,
-        "x-rapidapi-host": "v3.football.api-sports.io"
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      const tbody = document.getElementById("transfers");
-      tbody.innerHTML = "";
+        const tableBody = document.querySelector("#transfersTable tbody");
+        tableBody.innerHTML = "";
 
-      if (data.response && data.response.length > 0) {
+        if (!data.response || data.response.length === 0) {
+          tableBody.innerHTML = "<tr><td colspan='6'>No live transfers available.</td></tr>";
+          return;
+        }
+
         data.response.forEach(item => {
           const player = item.player?.name || "Unknown";
-          const from = item.transfers[0]?.teams?.out?.name || "—";
-          const to = item.transfers[0]?.teams?.in?.name || "—";
-          const status = item.transfers[0]?.type || "—";
-          const contract = item.transfers[0]?.date || "—";
-          const date = item.transfers[0]?.date || "—";
+          const fromClub = item.transfers?.[0]?.teams?.out?.name || "-";
+          const toClub = item.transfers?.[0]?.teams?.in?.name || "-";
+          const status = item.transfers?.[0]?.type || "-";
+          const contract = item.transfers?.[0]?.date || "-";
+          const date = new Date(item.transfers?.[0]?.date).toLocaleDateString() || "-";
 
           const row = `
             <tr>
               <td>${player}</td>
-              <td>${from}</td>
-              <td>${to}</td>
+              <td>${fromClub}</td>
+              <td>${toClub}</td>
               <td>${status}</td>
               <td>${contract}</td>
               <td>${date}</td>
-            </tr>`;
-          tbody.insertAdjacentHTML("beforeend", row);
+            </tr>
+          `;
+          tableBody.innerHTML += row;
         });
-      } else {
-        tbody.innerHTML = "<tr><td colspan='6' class='loading'>No transfers found</td></tr>";
+      } catch (err) {
+        console.error("Error loading transfers:", err);
+        document.querySelector("#transfersTable tbody").innerHTML =
+          "<tr><td colspan='6'>Failed to load transfers. Check proxy server.</td></tr>";
       }
-    })
-    .catch(error => {
-      console.error(error);
-      document.getElementById("transfers").innerHTML =
-        "<tr><td colspan='6' class='loading'>Error loading transfers</td></tr>";
-    });
+    }
+
+    loadTransfers();
   </script>
 </body>
 </html>
+
+
