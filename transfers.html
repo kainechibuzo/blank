@@ -1,165 +1,110 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Transfers - James Sports Official</title>
-  <meta name="description" content="Live football transfers, contract updates, and market news." />
-  <link rel="stylesheet" href="style.css" />
+  <title>Transfers — James Sports Official</title>
+  <meta name="description" content="Latest football transfers, deals, and rumors." />
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0d0d0d;
-      color: #f0f0f0;
-    }
-    header {
-      background: #000;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #e63946;
-    }
-    header h1 {
-      color: #e63946;
-      font-size: 1.8rem;
-      margin: 0;
-    }
-    nav a {
-      color: #fff;
-      text-decoration: none;
-      margin-left: 1.2rem;
-      font-weight: bold;
-    }
-    nav a:hover, nav a.active {
-      color: #e63946;
-    }
-    main {
-      padding: 2rem;
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 2rem;
-      color: #e63946;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #111;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 12px rgba(0,0,0,0.6);
-    }
-    th, td {
-      padding: 1rem;
-      text-align: left;
-      border: 1px solid #333;
-    }
-    th {
-      background: #1a1a1a;
-      color: #e63946;
-      font-size: 1rem;
-    }
-    tr:nth-child(even) {
-      background: #161616;
-    }
-    tr:hover {
-      background: #222;
-    }
-    footer {
-      background: #000;
-      text-align: center;
-      padding: 1rem;
-      border-top: 2px solid #e63946;
-      margin-top: 2rem;
-      color: #aaa;
-    }
+    :root{--accent:#ff0000;--card:#141414;--bg:#000;--text:#f5f5f5}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,Arial,Roboto;background:linear-gradient(180deg,var(--bg),#120000);color:var(--text)}
+    header{background:linear-gradient(90deg,#000,#4a0000);padding:.8rem 1rem;position:sticky;top:0;z-index:20}
+    .nav{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+    .brand{font-weight:900;color:var(--text);text-decoration:none}
+    main{max-width:1200px;margin:1.5rem auto;padding:0 1rem}
+    .toolbar{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:.8rem}
+    .toolbar .left{display:flex;gap:.5rem;flex-wrap:wrap}
+    input,select,button{padding:.5rem .7rem;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:var(--text)}
+    .btn{background:var(--accent);border:none;color:white;font-weight:800;border-radius:8px;cursor:pointer}
+    .btn:hover{opacity:.9}
+    .tablewrap{overflow:auto;border-radius:10px;border:1px solid #222}
+    table{width:100%;border-collapse:collapse;min-width:1100px}
+    th,td{padding:.6rem;border:1px solid #333;text-align:left;white-space:nowrap}
+    th{position:sticky;top:0;background:#101010;color:#ff6666}
+    tr:hover td{background:rgba(255,255,255,.05)}
+    .fav{cursor:pointer}
+    #backToTop{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:50%;border:none;background:var(--accent);display:none;color:#fff;cursor:pointer}
+    .muted{color:#aaa;font-size:.95rem}
   </style>
 </head>
 <body>
-  <!-- ===== Header ===== -->
   <header>
-    <h1>James Sports</h1>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="transfers.html" class="active">Transfers</a>
-      <a href="news.html">News</a>
-      <a href="analysis.html">Analysis</a>
-      <a href="contact.html">Contact</a>
-    </nav>
+    <div class="nav">
+      <a class="brand" href="index.html">James Sports Official</a>
+      <div>
+        <a href="index.html" style="color:#ddd;text-decoration:none;margin-right:1rem">Home</a>
+        <a href="transfers.html" style="color:#fc0505;text-decoration:none;margin-right:1rem">Transfers</a>
+        <a href="news.html" style="color:#ddd;text-decoration:none;margin-right:1rem">News</a>
+        <a href="analysis.html" style="color:#ddd;text-decoration:none;margin-right:1rem">Analysis</a>
+        <a href="contact.html" style="color:#ddd;text-decoration:none;margin-right:1rem">Contact</a>
+      </div>
+    </div>
   </header>
 
-  <!-- ===== Transfers Section ===== -->
   <main>
-    <h2>Live Football Transfers</h2>
-    <table id="transfersTable">
-      <thead>
-        <tr>
-          <th>Player</th>
-          <th>From Club</th>
-          <th>To Club</th>
-          <th>Status</th>
-          <th>Contract</th>
-          <th>Date</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr><td colspan="6">Loading live transfers...</td></tr>
-      </tbody>
-    </table>
+    <h1 style="text-align:center;color:#ff4444">Transfers</h1>
+
+    <div class="toolbar" role="region">
+      <div class="left">
+        <input id="q" type="search" placeholder="Search player or club (/ to focus)" />
+        <select id="pos"><option value="">All pos</option><option>GK</option><option>DF</option><option>MF</option><option>FW</option></select>
+        <select id="status"><option value="">All status</option><option>Official</option><option>Rumour</option></select>
+        <button id="reset" class="btn">Reset</button>
+      </div>
+      <div class="right" style="display:flex;gap:.5rem">
+        <button id="export" class="btn">Export CSV</button>
+        <button id="showFavs" class="btn">Favorites</button>
+      </div>
+    </div>
+
+    <div class="tablewrap" role="region" aria-label="Transfers table">
+      <table id="tbl">
+        <thead>
+          <tr><th>★</th><th>Player</th><th>From</th><th>To</th><th>Fee (€)</th><th>Contract</th><th>Pos</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody id="tbody"><tr><td colspan="9" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
   </main>
 
-  <!-- ===== Footer ===== -->
-  <footer>
-    <p>&copy; 2025 James Sports Official</p>
-  </footer>
+  <button id="backToTop" title="Back to top">↑</button>
 
-  <!-- ===== Script ===== -->
   <script>
+    const API_URL = "http://localhost:5000/transfers"; // your proxy
+
     async function loadTransfers() {
       try {
-        const res = await fetch("http://localhost:5000/transfers"); // proxy server
-        const data = await res.json();
+        const res = await fetch(API_URL);
+        const json = await res.json();
+        const transfers = json.response;
 
-        const tableBody = document.querySelector("#transfersTable tbody");
-        tableBody.innerHTML = "";
+        const tbody = document.getElementById("tbody");
+        tbody.innerHTML = "";
 
-        if (!data.response || data.response.length === 0) {
-          tableBody.innerHTML = "<tr><td colspan='6'>No live transfers available.</td></tr>";
-          return;
-        }
-
-        data.response.forEach(item => {
-          const player = item.player?.name || "Unknown";
-          const fromClub = item.transfers?.[0]?.teams?.out?.name || "-";
-          const toClub = item.transfers?.[0]?.teams?.in?.name || "-";
-          const status = item.transfers?.[0]?.type || "-";
-          const contract = item.transfers?.[0]?.date || "-";
-          const date = new Date(item.transfers?.[0]?.date).toLocaleDateString() || "-";
-
-          const row = `
-            <tr>
-              <td>${player}</td>
-              <td>${fromClub}</td>
-              <td>${toClub}</td>
-              <td>${status}</td>
-              <td>${contract}</td>
-              <td>${date}</td>
-            </tr>
+        transfers.slice(0, 20).forEach(item => {
+          const t = item.transfers[0];
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td class="fav">☆</td>
+            <td>${item.player.name}</td>
+            <td>${t.teams.out.name}</td>
+            <td>${t.teams.in.name}</td>
+            <td>${t.type || "Undisclosed"}</td>
+            <td>${t.contract || "—"}</td>
+            <td>${item.player.position || "—"}</td>
+            <td>Official</td>
+            <td>${t.date || ""}</td>
           `;
-          tableBody.innerHTML += row;
+          tbody.appendChild(row);
         });
       } catch (err) {
-        console.error("Error loading transfers:", err);
-        document.querySelector("#transfersTable tbody").innerHTML =
-          "<tr><td colspan='6'>Failed to load transfers. Check proxy server.</td></tr>";
+        console.error("Error fetching transfers:", err);
+        document.getElementById("tbody").innerHTML = `<tr><td colspan="9" class="muted">Error loading transfers</td></tr>`;
       }
     }
 
-    loadTransfers();
+    document.addEventListener("DOMContentLoaded", loadTransfers);
   </script>
 </body>
 </html>
-
-
