@@ -24,6 +24,30 @@ const SIGNALS = [
   },
 ]
 
+const STARTS = [
+  {
+    n: '1',
+    title: 'Filter the comparison',
+    body: 'Pick the things you actually care about — no training on your data, no human review, EU residency, a free tier that is not a different contract — and see which tools still stand.',
+    links: [{ to: '/compare', label: 'Open the comparison' }],
+  },
+  {
+    n: '2',
+    title: 'Describe what you need',
+    body: 'Say it in your own words instead of ticking boxes. You get the matching tools and, next to them, the exact filters it applied — so you can check its working.',
+    links: [{ to: '/discover', label: 'Describe what you need' }],
+  },
+  {
+    n: '3',
+    title: 'Add a tool, or vouch for one',
+    body: 'This is the only reason accounts exist. Submitting a tool proves you control its site; voting (Phase 2) is how real users weigh in. Neither touches a transparency score or any ranking.',
+    links: [
+      { to: '/directory/submit', label: 'Submit a tool' },
+      { to: '/account', label: 'Sign in' },
+    ],
+  },
+]
+
 export default function Home() {
   const top = [...TOOLS].map((t) => ({ t, s: scoreTool(t) })).sort((a, b) => b.s.score - a.s.score)
 
@@ -56,12 +80,40 @@ export default function Home() {
           </Link>
         </div>
         <p className="mt-3 text-xs text-ink-faint">
-          No accounts. No analytics. No sponsored rankings —{' '}
+          No account needed to read any of this. No analytics. No sponsored rankings —{' '}
           <Link to="/charter" className="underline underline-offset-2">
             the rule is written down
           </Link>
           .
         </p>
+      </section>
+
+      {/* New here? Three ways in, in the order people usually want them. */}
+      <section>
+        <h2 className="text-xl font-semibold text-ink">Start here</h2>
+        <p className="mt-1 text-sm text-ink-soft">Three ways in, depending on what you came for.</p>
+        <ol className="mt-4 grid gap-4 sm:grid-cols-3">
+          {STARTS.map((s) => (
+            <li key={s.title} className="flex flex-col rounded-lg border border-line bg-white p-4">
+              <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-soft font-mono text-xs font-semibold text-accent-ink">
+                {s.n}
+              </span>
+              <h3 className="mt-3 text-sm font-semibold text-ink">{s.title}</h3>
+              <p className="mt-1 flex-1 text-sm leading-relaxed text-ink-soft">{s.body}</p>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+                {s.links.map((l) => (
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className="text-sm font-medium text-accent underline underline-offset-2 hover:text-accent-ink"
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section>
