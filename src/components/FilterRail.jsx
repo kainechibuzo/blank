@@ -36,7 +36,7 @@ export default function FilterRail({ tools, active, onToggle, onClear }) {
                   <label
                     key={f.id}
                     title={f.help}
-                    className={`flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
+                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-2.5 text-sm transition-colors sm:items-start sm:py-1.5 ${
                       checked ? 'bg-accent-soft' : 'hover:bg-paper'
                     }`}
                   >

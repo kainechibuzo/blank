@@ -58,7 +58,7 @@ export default function Home() {
         <Pill tone="unknown" className="mb-4">
           Working title · pre-launch · draft data
         </Pill>
-        <h1 className="text-balance font-serif text-3xl leading-tight text-ink sm:text-5xl">
+        <h1 className="text-balance font-serif text-3xl leading-tight text-ink sm:text-4xl lg:text-5xl">
           What AI products actually do with your data, in plain English.
         </h1>
         <p className="mt-4 text-lg text-ink-soft">

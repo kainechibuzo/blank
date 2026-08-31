@@ -85,7 +85,7 @@ export default function Compare() {
                   <button
                     key={id}
                     onClick={() => toggleCategory(id)}
-                    className={`rounded-full border px-2 py-1 text-xs ${
+                    className={`rounded-full border px-2.5 py-1.5 text-xs sm:px-2 sm:py-1 ${
                       on ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line text-ink-soft hover:border-ink-faint'
                     }`}
                   >
@@ -121,7 +121,7 @@ export default function Compare() {
                 id="sort"
                 value={state.sort}
                 onChange={(e) => update({ ...state, sort: e.target.value })}
-                className="rounded-md border border-line bg-white px-2 py-1 text-sm text-ink"
+                className="min-h-[38px] rounded-md border border-line bg-white px-2 py-1.5 text-sm text-ink sm:min-h-0 sm:py-1"
               >
                 {SORTS.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -131,7 +131,7 @@ export default function Compare() {
               </select>
               <button
                 onClick={share}
-                className="rounded-md border border-line px-2 py-1 text-xs text-ink-soft hover:border-ink-faint"
+                className="min-h-[38px] rounded-md border border-line px-2 py-1.5 text-xs text-ink-soft hover:border-ink-faint sm:min-h-0 sm:py-1"
               >
                 {copied ? 'Link copied' : 'Copy link'}
               </button>

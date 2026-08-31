@@ -61,7 +61,7 @@ function VoteButton({ active, disabled, onClick, children, tone = 'neutral' }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex min-h-[36px] items-center rounded-md border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+      className={`inline-flex min-h-[44px] items-center rounded-md border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-[36px] ${
         active ? activeClass : 'border-line bg-white text-ink-soft hover:border-ink-faint'
       }`}
     >
@@ -395,19 +395,19 @@ export default function Directory() {
 
                 {l.status === 'listed' && !campaigns[l.id] && (
                   <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3">
-                    <label className="min-w-[12rem] flex-1 text-[11px] text-ink-faint">
+                    <label className="min-w-0 flex-1 text-[11px] text-ink-faint sm:min-w-[12rem]">
                       Promote this week (one campaign per submitter per week)
                       <input
                         value={campaignNote}
                         onChange={(e) => setCampaignNote(e.target.value)}
                         placeholder="Why people should look at it"
-                        className="mt-1 w-full rounded-md border border-line px-2 py-1.5 text-xs text-ink"
+                        className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2.5 text-xs text-ink sm:min-h-0 sm:py-1.5"
                       />
                     </label>
                     <button
                       type="button"
                       onClick={() => promote(l.id)}
-                      className="inline-flex min-h-[36px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint"
+                      className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint sm:min-h-[36px]"
                     >
                       Start campaign
                     </button>

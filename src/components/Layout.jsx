@@ -129,7 +129,9 @@ function MobileMenu({ open, onClose }) {
   if (!open) return null
 
   return (
-    <div ref={panelRef} className="border-t border-line bg-paper md:hidden">
+    // Capped and scrollable: a menu taller than the viewport leaves nothing of
+    // the page reachable behind it.
+    <div ref={panelRef} className="max-h-[75vh] overflow-y-auto border-t border-line bg-paper md:hidden">
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-4">
         <div>
           <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Use the site</p>
@@ -329,7 +331,7 @@ export default function Layout() {
       </main>
 
       <footer className="mt-8 border-t border-line bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+        <div className="mx-auto max-w-6xl px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))] sm:pt-10 sm:pb-[max(2.5rem,env(safe-area-inset-bottom))]">
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
             <div className="lg:col-span-2">
               <p className="font-mono text-sm font-semibold text-ink">{SITE.name}</p>

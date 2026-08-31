@@ -225,7 +225,7 @@ export default function Discover() {
                 <button
                   key={o.id}
                   onClick={() => chooseOption(o)}
-                  className="rounded-full border border-line bg-white px-3 py-1.5 text-xs text-ink hover:border-accent hover:text-accent-ink"
+                  className="inline-flex min-h-[44px] items-center rounded-full border border-line bg-white px-3.5 py-1.5 text-xs text-ink hover:border-accent hover:text-accent-ink sm:min-h-0 sm:px-3"
                 >
                   {o.label}
                 </button>
@@ -262,7 +262,7 @@ export default function Discover() {
                 <button
                   key={s}
                   onClick={() => send(s)}
-                  className="block w-full rounded border border-line px-2 py-1.5 text-left text-xs text-ink-soft hover:border-accent hover:text-accent-ink"
+                  className="flex min-h-[44px] w-full items-center rounded border border-line px-2 py-1.5 text-left text-xs text-ink-soft hover:border-accent hover:text-accent-ink sm:min-h-0"
                 >
                   {s}
                 </button>
