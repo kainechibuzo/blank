@@ -9,6 +9,7 @@ import Charter from './pages/Charter.jsx'
 import Directory from './pages/Directory.jsx'
 import SubmitListing from './pages/SubmitListing.jsx'
 import Account from './pages/Account.jsx'
+import Admin from './pages/Admin.jsx'
 import Sponsors from './pages/Sponsors.jsx'
 import NotFound from './pages/NotFound.jsx'
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/directory" element={<Directory />} />
         <Route path="/directory/submit" element={<SubmitListing />} />
         <Route path="/account" element={<Account />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="/sponsors" element={<Sponsors />} />
         <Route path="*" element={<NotFound />} />
       </Route>

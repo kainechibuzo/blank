@@ -256,5 +256,40 @@ export async function runSourceChecks() {
     'labelled strip above the score, amber border, solid amber edge'
   )
 
+  /* 11 — the admin dashboard is the roadmapped "a human reviews first" step,
+          so its own powers need bounding too. */
+  const adminSrc = stripComments(await read('src/pages/Admin.jsx'))
+  const adminSql = await read('supabase/migrations/0004_admin_dashboard.sql').catch(() => '')
+
+  push(
+    'Admin dashboard is gated on the founder role, not on knowing the URL',
+    /isFounder/.test(adminSrc) && /Founder access required/.test(adminSrc),
+    'page refuses to render without the founder role'
+  )
+
+  push(
+    'Every admin decision requires a written reason',
+    /if \(!reason\)/.test(adminSrc) && /record\(/.test(adminSrc),
+    'an action without a reason is rejected before anything is written'
+  )
+
+  push(
+    'Admin decisions are written to an audit log',
+    /admin_actions/.test(adminSrc) && /append-only|revoke update, delete/i.test(adminSql),
+    'log is insert-only; updates and deletes are revoked at the database level'
+  )
+
+  push(
+    'Admin cannot edit a transparency score, a ranking, or a provider row',
+    !/from\('tools'\)/.test(adminSrc) && /cannot change a transparency score/i.test(adminSrc),
+    'no write path to provider data, and the limit is stated in the interface'
+  )
+
+  push(
+    'Vote oversight reports shape, never who voted',
+    /admin_vote_signals/.test(adminSql) && !/voter_id/.test(adminSrc),
+    'aggregate counts only; the dashboard never renders a voter identity'
+  )
+
   return checks
 }

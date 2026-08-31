@@ -26,6 +26,8 @@ const RULES_NAV = [
   { to: '/sponsors', label: 'Sponsors', hint: 'The only page funding may touch', muted: true },
 ]
 
+const ADMIN_ITEM = { to: '/admin', label: 'Admin', hint: 'Review queue and founder decisions' }
+
 function ScrollTop() {
   const { pathname } = useLocation()
   useEffect(() => {
@@ -117,7 +119,7 @@ function AuthArea() {
 }
 
 function MobileMenu({ open, onClose }) {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isFounder } = useAuth()
   const panelRef = useRef(null)
 
   useEffect(() => {
@@ -152,6 +154,16 @@ function MobileMenu({ open, onClose }) {
                 <span className="text-xs text-ink-faint">{item.hint}</span>
               </NavLink>
             ))}
+            {isFounder && (
+              <NavLink
+                to="/admin"
+                onClick={onClose}
+                className="flex min-h-[44px] flex-col justify-center border-b border-line/60 py-2 text-ink-soft"
+              >
+                <span className="text-[15px] font-medium">{ADMIN_ITEM.label}</span>
+                <span className="text-xs text-ink-faint">{ADMIN_ITEM.hint}</span>
+              </NavLink>
+            )}
           </nav>
         </div>
 
@@ -207,6 +219,7 @@ function MobileMenu({ open, onClose }) {
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
+  const { isFounder } = useAuth()
 
   // Close the menu whenever the route changes, so a tapped link never leaves a
   // panel hanging over the page it just opened.
@@ -315,7 +328,10 @@ export default function Layout() {
           {/* Desktop only: short row, two groups, no wrapping. */}
           <div className="hidden items-center gap-8 pb-2 md:flex">
             <NavGroup label="Use" items={USE_NAV} />
-            <NavGroup label="Governed by" items={RULES_NAV} className="ml-auto" />
+            <div className="ml-auto flex items-center gap-4">
+              <NavGroup label="Governed by" items={RULES_NAV} />
+              {isFounder && <NavItem item={ADMIN_ITEM} />}
+            </div>
           </div>
         </div>
 
@@ -362,6 +378,7 @@ export default function Layout() {
                 links={[
                   ...RULES_NAV.map((i) => ({ to: i.to, label: i.label })),
                   { to: '/account', label: 'Account' },
+                  ...(isFounder ? [{ to: '/admin', label: 'Admin' }] : []),
                 ]}
               />
             </Collapsible>

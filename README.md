@@ -85,6 +85,8 @@ rather than failing.
    - `supabase/migrations/0003_submission_edit_window.sql` — the 24-hour
      submission edit window, enforced in row level security and frozen against
      extension.
+   - `supabase/migrations/0004_admin_dashboard.sql` — founder-only writes, the
+     append-only `admin_actions` audit log, and the vote-oversight function.
 2. **Set the browser env vars** (see `.env.example`):
    `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPPORT_EMAIL`. The anon
    key is designed to be public; row level security is what protects data.
@@ -102,6 +104,25 @@ rather than failing.
    function secret. The directory page says so out loud while it is missing.
 5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
    GitHub Actions secrets. Without them the workflow skips cleanly and says so.
+
+### Admin dashboard
+
+`/admin` is where the weekly check's "a human reviews this" actually happens.
+It is founder-only, gated in the page and again in the database.
+
+Roles cannot be set from the interface — run this once in the SQL editor:
+
+```sql
+update public.profiles set role = 'founder' where email = 'you@example.org';
+```
+
+It can delist, relist, keep listed and re-check. It cannot change a
+transparency score, a ranking or a provider row, it cannot grant ADUO (Stage 3
+is unbuilt and its thresholds are unratified), and it never shows who voted —
+only counts and timing. Every decision requires a written reason and is
+appended to an audit log that cannot be edited or deleted.
+
+Full write-up: `docs/07-admin-dashboard.md`.
 
 ### Editing a submission
 
@@ -258,7 +279,7 @@ scripts/
 supabase/
   migrations/0001_phase2_directory.sql  tables, RLS, founder-only status guard
   functions/verify-snippet/             on-demand ownership verification
-docs/                      the written rules
+docs/                      the written rules (07 covers the admin dashboard)
 ```
 
 ---
