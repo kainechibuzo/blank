@@ -1,0 +1,95 @@
+name: Weekly policy freshness check
+
+# The cheap half of staying fresh: fetch every policy page, hash it, and only
+# flag the rows whose hash actually changed. Re-extraction (and a human) is
+# triggered for those rows alone.
+#
+# Runs on GitHub Actions rather than a Vercel or Render cron job because it is
+# free, needs no always-on service, and doubles as the founder's work queue: it
+# opens an issue listing exactly which tools need re-reading.
+
+on:
+  schedule:
+    # Mondays at 06:17 UTC. Odd minute avoids the top-of-hour rush on runners.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Restrict the run to one tool id (optional)'
+        required: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Hash every policy page
+        id: hashes
+        run: |
+          ARGS="--save"
+          if [ -n "${{ github.event.inputs.only }}" ]; then ARGS="$ARGS --only=${{ github.event.inputs.only }}"; fi
+          npm run check:policies -- $ARGS 2>&1 | tee /tmp/report.txt
+
+      - name: Commit updated baseline
+        run: |
+          if git diff --quiet -- data/policy-hashes.json; then
+            echo "No hash changes recorded."
+            exit 0
+          fi
+          git config user.name "policy-hash-bot"
+          git config user.email "policy-hash-bot@users.noreply.github.com"
+          git add data/policy-hashes.json
+          git commit -m "chore(policy): update hashes $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Open an issue listing tools that need a re-read
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs')
+            const report = fs.readFileSync('/tmp/report.txt', 'utf8')
+            const match = report.match(/tools needing a re-read \+ human review: (.+)/)
+            const tools = match ? match[1].trim() : 'none'
+
+            if (tools === 'none' || tools === '') {
+              core.info('No policy pages changed this week. Nothing to review.')
+              return
+            }
+
+            const date = new Date().toISOString().slice(0, 10)
+            const title = `Policy pages changed — ${tools.split(', ').length} tool(s) need a re-read (${date})`
+            const body = [
+              'The weekly hash check found changes in these rows:',
+              '',
+              ...tools.split(', ').map((t) => `- [ ] \`${t}\``),
+              '',
+              'A changed hash means **a human should look**, not that the policy changed — pages embed',
+              'tokens, timestamps and A/B copy. Read the source, confirm or correct each of the eight',
+              'fields, then set `verification.status` to `verified` with today\'s date.',
+              '',
+              '<details><summary>Run output</summary>',
+              '',
+              '```',
+              report.trim(),
+              '```',
+              '</details>',
+            ].join('\n')
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['policy-change'],
+            })

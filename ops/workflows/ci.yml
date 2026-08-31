@@ -1,0 +1,24 @@
+name: CI
+
+# Runs the project's hard rules on every push and pull request.
+# If a rule is worth writing down, it is worth failing a build over.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Traceability + render checks
+        run: npm run check

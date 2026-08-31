@@ -105,6 +105,55 @@ vercel --prod   # production
   configure for CSP beyond what's in `vercel.json`.
 - Static hosting is free at this scale; the $20–50/mo estimate in the roadmap covers the point where
   alerts and accounts need a real backend.
+- **Vercel Hobby is licensed for non-commercial use.** This project's roadmap includes sponsorship and
+  a paid alerts tier, so the moment money moves, the terms require Pro. Check the current terms
+  before relying on the free plan.
+
+### Do I also need Render?
+
+Not today, and adding it now would mean paying for an idle service.
+
+| Need | Where it runs now | Cost |
+|---|---|---|
+| The site itself | Vercel (static) | $0 |
+| Weekly policy hash check | GitHub Actions (`ops/workflows/policy-hash-check.yml`) | $0 |
+| Hard-rule checks in CI | GitHub Actions (`ops/workflows/ci.yml`) | $0 |
+| Policy change alerts | Not built — browser-local watchlist only | $0 |
+
+Render earns its place at the point the product grows a backend — the paid alerts tier (email +
+database), accounts, directory submissions, and daily upvote decay. At that stage Render is the
+cheaper home for that half: a web service plus Postgres plus a cron job is roughly $15/mo, versus
+Vercel Pro at $20/mo per seat. A split setup is normal: static front end on Vercel, jobs and database
+on Render.
+
+Two things to know before choosing:
+
+- **Vercel Hobby does allow cron jobs, but only once per day per job** — fine for a weekly check, and
+  Hobby permits up to 100 jobs per project. The binding constraint is the non-commercial licence, not
+  the schedule.
+- **Render has no free tier for cron jobs** — they start at $1/mo. Its free *web service* tier also
+  suspends after inactivity, which makes it unsuitable for anything user-facing. Static sites are the
+  exception and are fine on the free tier.
+
+So: ship on Vercel, run the freshness check on GitHub Actions, and revisit when there is a database to
+look after.
+
+### CI
+
+Two workflows ship in `ops/workflows/` — **move them to `.github/workflows/` to activate them.**
+They are parked outside that directory because the tooling pushing this branch is not permitted to
+create workflow files; GitHub rejects such pushes. Once moved (or once wider GitHub permissions are
+granted), they run as-is:
+
+- `ci.yml` — runs `npm run check` (traceability assertions + route render smoke test) on every push
+  and pull request.
+- `policy-hash-check.yml` — weekly cron (Mondays 06:17 UTC) and manual dispatch. It re-hashes every
+  policy page, commits the updated baseline, and **opens a GitHub issue listing exactly which tools
+  need a human re-read**. That issue is the verification work queue.
+
+```bash
+mkdir -p .github/workflows && mv ops/workflows/*.yml .github/workflows/
+```
 
 ---
 
