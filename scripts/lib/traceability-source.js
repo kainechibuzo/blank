@@ -79,10 +79,15 @@ export async function runSourceChecks() {
 
   /* 2 — The service role key must never appear in browser code. */
   const files = await walk('src')
+  // Matches reads and assignments with a real value, not the bare name
+  // appearing in setup instructions — the admin dashboard prints the deploy
+  // command, and that must not trip this.
+  const roleRead =
+    /(?:import\.meta\.env|env|process\.env)[.\["']SUPABASE_SERVICE_ROLE_KEY|SUPABASE_SERVICE_ROLE_KEY\s*[:=]\s*['"]?[A-Za-z0-9._-]{12,}/
   const leakHits = []
   for (const f of files) {
     const src = stripComments(await read(f))
-    if (/SERVICE_ROLE/.test(src)) leakHits.push(f)
+    if (roleRead.test(src)) leakHits.push(f)
   }
   push(
     'No browser code references the Supabase service-role key',
@@ -96,7 +101,7 @@ export async function runSourceChecks() {
   const dbHits = []
   for (const f of rankingFiles) {
     const src = await read(f)
-    if (/supabase|listings|snippet_checks|votes|campaigns/.test(src)) dbHits.push(f)
+    if (/supabase|listings|snippet_checks|votes|campaigns|aduo/.test(src)) dbHits.push(f)
   }
   push(
     'Ranking and scoring never read the directory database',
@@ -289,6 +294,47 @@ export async function runSourceChecks() {
     'Vote oversight reports shape, never who voted',
     /admin_vote_signals/.test(adminSql) && !/voter_id/.test(adminSrc),
     'aggregate counts only; the dashboard never renders a voter identity'
+  )
+
+  /* 12 — Stage 3. ADUO is a deliberate, disclosed exception to "ranking
+          follows votes", which is exactly why it needs fencing. */
+  const { ADUO } = await import('../../src/lib/aduo.js')
+  const aduoSql = await read('supabase/migrations/0005_aduo_and_duplicates.sql').catch(() => '')
+  const aduoJs = stripComments(await read('src/lib/aduo.js'))
+  const adminJs = stripComments(await read('src/pages/Admin.jsx'))
+  const snippetScriptCode = stripComments(snippetScript)
+
+  push(
+    'ADUO thresholds are not ratified',
+    ADUO.ratified === false && /ratified: false/.test(aduoJs),
+    'flipping ratified to true requires a date and a record alongside it'
+  )
+
+  push(
+    'ADUO cannot be granted automatically — no job, no threshold crossing',
+    !/aduo/i.test(snippetScriptCode) && /decideAduo/.test(adminJs) && /aduo_granted_at/.test(adminJs),
+    'the weekly job never touches ADUO; only a founder decision writes it'
+  )
+
+  push(
+    'An ADUO grant requires the checkable criteria and two human attestations',
+    /computablePass/.test(adminJs) && /form\.traffic && form\.reviews/.test(adminJs),
+    'criteria-bound, not discretionary: the button is disabled without them'
+  )
+
+  push(
+    'The site key is computed identically in the app and in SQL',
+    /export function siteKeyOf/.test(stripComments(await read('src/lib/sites.js'))) &&
+      /function public\.site_key_of/.test(aduoSql),
+    'both normalise to host + path, lowercased, without scheme, www or query'
+  )
+
+  push(
+    'The same person cannot claim the same site twice',
+    /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(
+      stripComments(await read('src/pages/SubmitListing.jsx'))
+    ),
+    'unique index on (owner_id, site_key), plus a pre-write check in the form'
   )
 
   return checks

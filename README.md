@@ -87,6 +87,9 @@ rather than failing.
      extension.
    - `supabase/migrations/0004_admin_dashboard.sql` — founder-only writes, the
      append-only `admin_actions` audit log, and the vote-oversight function.
+   - `supabase/migrations/0005_aduo_and_duplicates.sql` — ADUO applications and
+     decisions, `site_key` duplicate prevention (this migration also removes any
+     existing self-duplicates, keeping the earliest of each).
 2. **Set the browser env vars** (see `.env.example`):
    `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPPORT_EMAIL`. The anon
    key is designed to be public; row level security is what protects data.
@@ -104,6 +107,22 @@ rather than failing.
    function secret. The directory page says so out loud while it is missing.
 5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
    GitHub Actions secrets. Without them the workflow skips cleanly and says so.
+
+### ADUO (Stage 3)
+
+Mechanism live, thresholds **UNRATIFIED**. An owner applies from their own
+listed submission; a founder grants or declines in `/admin` with a written
+reason. Nothing is automatic: the Grant button is disabled unless both
+machine-checkable criteria pass, both human checks are attested, and a reason is
+written. A granted listing is shown above the others in the directory only — it
+never enters a transparency score or `/compare`.
+
+### Duplicates
+
+One submission per site, per account, enforced by a unique index on
+`(owner_id, site_key)` where `site_key` is host + path with scheme, `www.`,
+query and trailing slash stripped. Two different accounts may claim the same
+site; only one can verify it, and `/admin` lists the conflict.
 
 ### Admin dashboard
 

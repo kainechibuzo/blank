@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import { requestVerification } from '../lib/listings.js'
-import { TOOLS, DATASET_META } from '../data/tools.js'
+import { TOOLS, DATASET_META, TOOL_BY_ID } from '../data/tools.js'
+import { ADUO, evaluateAduo } from '../lib/aduo.js'
 import { scoreTool } from '../lib/scoring.js'
 import { freshness } from '../lib/watchlist.js'
 import Collapsible from '../components/Collapsible.jsx'
@@ -13,7 +14,7 @@ import Pill from '../components/Pill.jsx'
 const SNIPPET_TONE = { ok: 'good', altered: 'mixed', missing: 'mixed', unreachable: 'unknown', unchecked: 'neutral' }
 
 const LISTING_FIELDS =
-  'id, name, url, category, claimed_description, owner_id, status, snippet_state, review_required, review_reason, warning_message, editable_until, submitted_at, verified_at, last_checked_at, admin_decision, admin_decision_at'
+  'id, name, url, category, claimed_description, linked_tool_id, owner_id, status, snippet_state, review_required, review_reason, warning_message, editable_until, submitted_at, verified_at, last_checked_at, admin_decision, admin_decision_at, aduo_granted_at'
 
 /**
  * Founder-only.
@@ -40,15 +41,23 @@ export default function Admin() {
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState(null)
   const [reasons, setReasons] = useState({})
+  const [applications, setApplications] = useState([])
+  const [duplicates, setDuplicates] = useState([])
+  const [voteSummary, setVoteSummary] = useState({})
+  const [aduoForms, setAduoForms] = useState({})
+  const [backend, setBackend] = useState(null)
 
   const load = async () => {
     if (!supabase) return
-    const [l, c, camp, sig, log] = await Promise.all([
+    const [l, c, camp, sig, log, apps, dup, vs] = await Promise.all([
       supabase.from('listings').select(LISTING_FIELDS).order('submitted_at', { ascending: false }),
       supabase.from('snippet_checks').select('*').order('checked_at', { ascending: false }).limit(200),
       supabase.from('campaigns').select('listing_id, note, week_start, created_at'),
       supabase.rpc('admin_vote_signals'),
       supabase.from('admin_actions').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('aduo_applications').select('*').order('created_at', { ascending: false }),
+      supabase.rpc('admin_duplicate_claims'),
+      supabase.rpc('directory_vote_summary'),
     ])
     if (l.error) setError(l.error.message)
     setListings(l.data ?? [])
@@ -56,10 +65,39 @@ export default function Admin() {
     setCampaigns(camp.data ?? [])
     setVoteSignals(sig.error ? [] : sig.data ?? [])
     setActions(log.data ?? [])
+    setApplications(apps.data ?? [])
+    setDuplicates(dup.error ? [] : dup.data ?? [])
+    setVoteSummary(
+      Object.fromEntries((vs.data ?? []).map((r) => [r.listing_id, Number(r.upvote_score ?? 0)]))
+    )
   }
 
   useEffect(() => {
     if (isFounder) load()
+  }, [isFounder])
+
+  // "The verify-snippet function is not deployed yet" is the single most
+  // confusing thing a founder hits. Show the state instead of letting an error
+  // message explain it after the fact.
+  useEffect(() => {
+    if (!isFounder || !supabase) return
+    const probe = async (name, body) => {
+      try {
+        const { error } = await supabase.functions.invoke(name, { body })
+        if (!error) return true
+        // A structured reply of any kind means the function exists. Only a
+        // fetch failure means it is not deployed.
+        return !/Failed to send a request|FunctionsFetchError|network/i.test(
+          `${error.name ?? ''} ${error.message ?? ''}`
+        )
+      } catch {
+        return false
+      }
+    }
+    Promise.all([
+      probe('verify-snippet', { listingId: 'probe' }),
+      probe('cast-vote', { listingId: 'probe', value: 1 }),
+    ]).then(([verify, cast]) => setBackend({ verify, cast }))
   }, [isFounder])
 
   const checksByListing = useMemo(() => {
@@ -179,6 +217,80 @@ export default function Admin() {
     await load()
   }
 
+  const toolFor = (listing) => {
+    const row = listing?.linked_tool_id ? TOOL_BY_ID[listing.linked_tool_id] : null
+    if (!row) return null
+    const s = scoreTool(row)
+    return { verification: row.verification, score: s.score, coverage: s.coverage }
+  }
+
+  const decideAduo = async (app, grant) => {
+    const form = aduoForms[app.id] ?? {}
+    const reason = (form.reason ?? '').trim()
+    if (!reason) {
+      setError('Write a reason. An ADUO decision without one is not accepted.')
+      return
+    }
+    const listing = listings.find((l) => l.id === app.listing_id)
+    const tool = toolFor(listing)
+    const upvotes = Number(voteSummary[app.listing_id] ?? 0)
+    const evaluation = evaluateAduo({ tool, upvotes })
+
+    if (grant && !evaluation.computablePass) {
+      setError('The checkable criteria do not clear. ADUO is criteria-bound, not discretionary.')
+      return
+    }
+    if (grant && !(form.traffic && form.reviews)) {
+      setError('Both human checks must be attested: you are confirming you verified the evidence.')
+      return
+    }
+
+    setBusy(app.id)
+    setError(null)
+    const tosCheck = evaluation.checks.find((c) => c.key === 'tos')
+    const upCheck = evaluation.checks.find((c) => c.key === 'upvoteCeiling')
+
+    const { error: appError } = await supabase
+      .from('aduo_applications')
+      .update({
+        status: grant ? 'granted' : 'declined',
+        decided_by: user.id,
+        decided_at: new Date().toISOString(),
+        decision_reason: reason,
+        traffic_ok: grant ? Boolean(form.traffic) : null,
+        reviews_ok: grant ? Boolean(form.reviews) : null,
+        tos_score: tosCheck?.status === 'unknown' ? null : tool?.score ?? null,
+        tos_coverage: tosCheck?.status === 'unknown' ? null : tool?.coverage ?? null,
+        tos_ok: tosCheck ? tosCheck.status === 'pass' : null,
+        upvotes_at_decision: upvotes,
+        upvote_ok: upCheck ? upCheck.status === 'pass' : null,
+        thresholds_ratified_at_decision: ADUO.ratified,
+      })
+      .eq('id', app.id)
+
+    if (appError) {
+      setError(appError.message)
+      setBusy(null)
+      return
+    }
+
+    if (grant) {
+      await supabase
+        .from('listings')
+        .update({ aduo_granted_at: new Date().toISOString() })
+        .eq('id', app.listing_id)
+    }
+
+    await record(
+      listing ?? { id: app.listing_id, name: app.listing_name ?? 'unknown listing' },
+      grant ? 'aduo_granted' : 'aduo_declined',
+      reason
+    )
+    setAduoForms((f) => ({ ...f, [app.id]: {} }))
+    setBusy(null)
+    await load()
+  }
+
   const reviewQueue = listings.filter((l) => l.review_required)
   const pending = listings.filter((l) => l.status === 'pending')
   const listed = listings.filter((l) => l.status === 'listed')
@@ -291,6 +403,39 @@ export default function Admin() {
         reading a linked policy on a recorded date, and that happens in the verification workflow —
         in code, with a reviewer and a date attached — not from a toggle here.
       </Callout>
+
+      {backend && (
+        <div className="rounded-lg border border-line bg-white p-4">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+            Backend functions
+          </p>
+          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+            <span className="text-ink-soft">
+              verify-snippet:{' '}
+              <strong className={backend.verify ? 'text-good' : 'text-bad'}>
+                {backend.verify ? 'deployed' : 'NOT DEPLOYED'}
+              </strong>
+            </span>
+            <span className="text-ink-soft">
+              cast-vote:{' '}
+              <strong className={backend.cast ? 'text-good' : 'text-bad'}>
+                {backend.cast ? 'deployed' : 'NOT DEPLOYED'}
+              </strong>
+            </span>
+          </div>
+          {!(backend.verify && backend.cast) && (
+            <pre className="mt-3 overflow-x-auto rounded bg-paper p-3 font-mono text-[11px] leading-relaxed text-ink-soft">
+{`supabase functions deploy verify-snippet
+supabase functions deploy cast-vote
+supabase secrets set SUPABASE_URL=... SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=...`}
+            </pre>
+          )}
+          <p className="mt-2 text-[11px] text-ink-faint">
+            Until both are deployed, ownership cannot be confirmed and votes cannot be cast. The
+            interface says so rather than failing silently.
+          </p>
+        </div>
+      )}
 
       {error && <Callout variant="danger">{error}</Callout>}
 
@@ -431,6 +576,173 @@ export default function Admin() {
           </Link>
           .
         </p>
+      </Collapsible>
+
+      <Collapsible title="ADUO applications" count={applications.filter((a) => a.status === 'pending').length}>
+        <Callout variant="warn" title="Thresholds are UNRATIFIED — every grant is provisional">
+          These criteria have not been agreed yet, and they must be ratified <strong>before</strong> the
+          first grant is normalised, not after. Until then each grant is a founder decision made
+          against numbers that are still open to argument, and it is recorded as such.
+        </Callout>
+
+        {applications.filter((a) => a.status === 'pending').length === 0 ? (
+          <p className="mt-3 text-sm text-ink-soft">No open applications.</p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {applications
+              .filter((a) => a.status === 'pending')
+              .map((app) => {
+                const listing = listings.find((l) => l.id === app.listing_id)
+                const ev = evaluateAduo({
+                  tool: toolFor(listing),
+                  upvotes: voteSummary[app.listing_id] ?? 0,
+                })
+                const form = aduoForms[app.id] ?? {}
+                const canGrant = ev.computablePass && form.traffic && form.reviews
+                return (
+                  <li key={app.id} className="rounded-lg border border-line bg-white p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-ink">
+                        {listing?.name ?? app.listing_id.slice(0, 8)}
+                      </span>
+                      <span className="flex flex-wrap gap-1">
+                        {ev.checks.map((c) => (
+                          <Pill
+                            key={c.key}
+                            tone={c.status === 'pass' ? 'good' : c.status === 'fail' ? 'bad' : 'unknown'}
+                          >
+                            {c.label}: {c.status}
+                          </Pill>
+                        ))}
+                      </span>
+                    </div>
+
+                    <ul className="mt-2 space-y-1">
+                      {ev.checks.map((c) => (
+                        <li key={c.key} className="text-xs text-ink-soft">
+                          <strong className="text-ink">{c.label}:</strong> {c.detail}
+                        </li>
+                      ))}
+                    </ul>
+
+                    {(app.traffic_evidence || app.reviews_evidence || app.applicant_note) && (
+                      <div className="mt-2 rounded border border-line bg-paper p-2">
+                        <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+                          Evidence supplied
+                        </p>
+                        {app.traffic_evidence && (
+                          <p className="mt-1 break-all text-xs text-ink-soft">Traffic: {app.traffic_evidence}</p>
+                        )}
+                        {app.reviews_evidence && (
+                          <p className="mt-1 break-all text-xs text-ink-soft">Reviews: {app.reviews_evidence}</p>
+                        )}
+                        {app.applicant_note && (
+                          <p className="mt-1 text-xs text-ink-soft">Note: {app.applicant_note}</p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <label className="flex min-h-[44px] items-center gap-2 text-xs text-ink-soft sm:min-h-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form.traffic)}
+                          onChange={(e) =>
+                            setAduoForms((f) => ({ ...f, [app.id]: { ...f[app.id], traffic: e.target.checked } }))
+                          }
+                          className="h-3.5 w-3.5 accent-accent"
+                        />
+                        I verified the traffic evidence
+                      </label>
+                      <label className="flex min-h-[44px] items-center gap-2 text-xs text-ink-soft sm:min-h-0">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(form.reviews)}
+                          onChange={(e) =>
+                            setAduoForms((f) => ({ ...f, [app.id]: { ...f[app.id], reviews: e.target.checked } }))
+                          }
+                          className="h-3.5 w-3.5 accent-accent"
+                        />
+                        I verified the review evidence
+                      </label>
+                    </div>
+
+                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        value={form.reason ?? ''}
+                        onChange={(e) =>
+                          setAduoForms((f) => ({ ...f, [app.id]: { ...f[app.id], reason: e.target.value } }))
+                        }
+                        placeholder="Reason for this decision (recorded)"
+                        className="min-h-[44px] w-full flex-1 rounded-md border border-line px-2 py-2 text-xs text-ink sm:min-h-[36px] sm:py-1.5"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={!canGrant || busy === app.id}
+                          title={canGrant ? undefined : 'Needs a reason, both human checks, and the checkable criteria to clear.'}
+                          onClick={() => decideAduo(app, true)}
+                          className="inline-flex min-h-[44px] items-center rounded-md border border-good bg-good-soft px-3 py-1.5 text-xs font-medium text-good disabled:opacity-40 sm:min-h-[36px]"
+                        >
+                          Grant boost
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy === app.id}
+                          onClick={() => decideAduo(app, false)}
+                          className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink disabled:opacity-50 sm:min-h-[36px]"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                )
+              })}
+          </ul>
+        )}
+
+        {applications.filter((a) => a.status !== 'pending').length > 0 && (
+          <div className="mt-4">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+              Decided
+            </p>
+            <ul className="mt-1 space-y-1">
+              {applications
+                .filter((a) => a.status !== 'pending')
+                .slice(0, 10)
+                .map((a) => (
+                  <li key={a.id} className="text-xs text-ink-soft">
+                    {listings.find((l) => l.id === a.listing_id)?.name ?? a.listing_id.slice(0, 8)} —{' '}
+                    <strong className="text-ink">{a.status}</strong>
+                    {a.thresholds_ratified_at_decision ? '' : ' (thresholds were unratified)'}
+                    {a.decision_reason ? `: ${a.decision_reason}` : ''}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
+      </Collapsible>
+
+      <Collapsible title="Duplicate claims" count={duplicates.length}>
+        <p className="text-xs text-ink-soft">
+          The same site claimed by more than one account. The database cannot decide who is right —
+          only one of them can actually place the verification tag — so this is listed for a person.
+        </p>
+        {duplicates.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-faint">No duplicate claims.</p>
+        ) : (
+          <ul className="mt-2 space-y-2">
+            {duplicates.map((d) => (
+              <li key={d.site_key} className="rounded border border-mixed/40 bg-mixed-soft/50 p-2">
+                <p className="font-mono text-xs text-ink">{d.site_key}</p>
+                <p className="text-xs text-ink-soft">
+                  {d.claim_count} claims: {d.listing_names.join(', ')}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </Collapsible>
 
       <Collapsible title="Audit log" count={actions.length}>

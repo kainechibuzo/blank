@@ -17,6 +17,7 @@ import {
 } from '../lib/votes.js'
 import Captcha from '../lib/captcha.jsx'
 import SubmissionList from '../components/SubmissionList.jsx'
+import { ADUO } from '../lib/aduo.js'
 import { CATEGORIES } from '../data/schema.js'
 import { TOOL_BY_ID } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
@@ -168,6 +169,14 @@ function ListingCard({ listing, summary, myVote, campaign, blockedReason, busy, 
           </p>
         </div>
         <Pill tone={SNIPPET_TONE[listing.snippet_state] ?? 'neutral'}>snippet: {listing.snippet_state}</Pill>
+        {listing.aduo_granted_at && (
+          <Pill
+            tone="accent"
+            title="A disclosed, founder-granted visibility boost against unratified thresholds. It reorders the directory only."
+          >
+            ADUO boost
+          </Pill>
+        )}
       </div>
 
       {listing.blurb && <p className="mt-3 text-sm text-ink-soft">{listing.blurb}</p>}
@@ -232,12 +241,16 @@ export default function Directory() {
   const [voteError, setVoteError] = useState(null)
   const [campaignNote, setCampaignNote] = useState('')
   const [notice, setNotice] = useState(null)
+  const [aduoOpen, setAduoOpen] = useState(null)
+  const [aduoForm, setAduoForm] = useState({})
+  const [aduoBusy, setAduoBusy] = useState(false)
+  const [aduoApps, setAduoApps] = useState({})
 
   useEffect(() => {
     if (!supabase) return
     supabase
       .from('listings')
-      .select('id, name, url, category, blurb, claimed_description, snippet_state, verified_at, linked_tool_id, owner_id')
+      .select('id, name, url, category, blurb, claimed_description, snippet_state, verified_at, linked_tool_id, owner_id, aduo_granted_at')
       .eq('status', 'listed')
       .order('verified_at', { ascending: false })
       .then(({ data, error: qError }) => {
@@ -246,6 +259,20 @@ export default function Directory() {
         else setListings(data ?? [])
       })
   }, [])
+
+  useEffect(() => {
+    if (!supabase || !user) {
+      setAduoApps({})
+      return
+    }
+    supabase
+      .from('aduo_applications')
+      .select('listing_id, status, decision_reason, created_at')
+      .eq('requested_by', user.id)
+      .then(({ data }) =>
+        setAduoApps(Object.fromEntries((data ?? []).map((a) => [a.listing_id, a])))
+      )
+  }, [user])
 
   useEffect(() => {
     if (!supabase) return
@@ -301,6 +328,45 @@ export default function Directory() {
     }
     setCampaigns(await fetchCampaignsThisWeek())
   }
+
+  const applyAduo = async (listingId) => {
+    setAduoBusy(true)
+    setNotice(null)
+    const { error: applyError } = await supabase.from('aduo_applications').insert({
+      listing_id: listingId,
+      requested_by: user.id,
+      traffic_evidence: aduoForm.traffic || null,
+      reviews_evidence: aduoForm.reviews || null,
+      applicant_note: aduoForm.note || null,
+    })
+    setAduoBusy(false)
+    if (applyError) {
+      setNotice(
+        /duplicate key|unique/i.test(applyError.message)
+          ? 'You already have an open ADUO application for this listing.'
+          : applyError.message
+      )
+      return
+    }
+    setAduoOpen(null)
+    setAduoForm({})
+    setNotice('Application submitted. A person reviews it — nothing is granted automatically.')
+    const { data } = await supabase
+      .from('aduo_applications')
+      .select('listing_id, status, decision_reason, created_at')
+      .eq('requested_by', user.id)
+    setAduoApps(Object.fromEntries((data ?? []).map((a) => [a.listing_id, a])))
+  }
+
+  // ADUO boosts sit above the rest, which is the whole point of the mechanism.
+  // It reorders the directory only — never the Phase 1 comparison.
+  const orderedListings = [...listings].sort((a, b) => {
+    const boost = (x) => (x.aduo_granted_at ? 1 : 0)
+    if (boost(b) !== boost(a)) return boost(b) - boost(a)
+    const score = (x) => Number(summary[x.id]?.upvoteScore ?? 0)
+    if (score(b) !== score(a)) return score(b) - score(a)
+    return new Date(b.verified_at ?? 0) - new Date(a.verified_at ?? 0)
+  })
 
   const blockedReason = voteBlockReason({ user, accountAgeDays })
 
@@ -360,6 +426,10 @@ export default function Directory() {
       {configured && (
         <section>
           <h2 className="text-lg sm:text-xl font-semibold text-ink">Listed tools</h2>
+          <p className="text-xs text-ink-faint">
+            Ordered by: ADUO boosts first, then community signal. ADUO affects this list only — never
+            a transparency score or the public comparison.
+          </p>
           {loading ? (
             <p className="mt-2 text-sm text-ink-soft">Loading…</p>
           ) : listings.length === 0 ? (
@@ -368,7 +438,7 @@ export default function Directory() {
             </p>
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {listings.map((l) => (
+              {orderedListings.map((l) => (
                 <ListingCard
                   key={l.id}
                   listing={l}
@@ -400,33 +470,104 @@ export default function Directory() {
             className="mt-3"
             listings={mine}
             onChanged={() => fetchMine(user?.id).then(setMine)}
-            extra={(l) =>
-              l.status === 'listed' && !campaigns[l.id] ? (
-                <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3">
-                  <label className="min-w-0 flex-1 text-[11px] text-ink-faint sm:min-w-[12rem]">
-                    Promote this week (one campaign per submitter per week)
-                    <input
-                      value={campaignNote}
-                      onChange={(e) => setCampaignNote(e.target.value)}
-                      placeholder="Why people should look at it"
-                      className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-xs text-ink sm:min-h-0 sm:py-1.5"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => promote(l.id)}
-                    className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint sm:min-h-[36px]"
-                  >
-                    Start campaign
-                  </button>
-                </div>
-              ) : campaigns[l.id] ? (
-                <p className="mt-3 border-t border-line pt-3 text-[11px] text-ink-faint">
-                  You are promoting this listing this week. Campaigns are shown publicly on the card,
-                  and you get one per week.
-                </p>
-              ) : null
-            }
+            extra={(l) => (
+              <>
+                {l.status === 'listed' && !campaigns[l.id] ? (
+                  <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3">
+                    <label className="min-w-0 flex-1 text-[11px] text-ink-faint sm:min-w-[12rem]">
+                      Promote this week (one campaign per submitter per week)
+                      <input
+                        value={campaignNote}
+                        onChange={(e) => setCampaignNote(e.target.value)}
+                        placeholder="Why people should look at it"
+                        className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-xs text-ink sm:min-h-0 sm:py-1.5"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => promote(l.id)}
+                      className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint sm:min-h-[36px]"
+                    >
+                      Start campaign
+                    </button>
+                  </div>
+                ) : campaigns[l.id] ? (
+                  <p className="mt-3 border-t border-line pt-3 text-[11px] text-ink-faint">
+                    You are promoting this listing this week. Campaigns are shown publicly on the card,
+                    and you get one per week.
+                  </p>
+                ) : null}
+
+                {l.status === 'listed' && (
+                  <div className="mt-3 border-t border-line pt-3">
+                    {l.aduo_granted_at ? (
+                      <p className="text-[11px] text-ink-faint">
+                        ADUO boost granted{' '}
+                        {new Date(l.aduo_granted_at).toISOString().slice(0, 10)}. The listing is shown
+                        above the others in this directory. It grants nothing in the comparison.
+                      </p>
+                    ) : aduoApps[l.id] ? (
+                      <p className="text-[11px] text-ink-faint">
+                        ADUO application: <strong className="text-ink">{aduoApps[l.id].status}</strong>.{' '}
+                        {aduoApps[l.id].decision_reason
+                          ? `Reason given: ${aduoApps[l.id].decision_reason}`
+                          : 'A person reviews it — nothing is granted automatically.'}
+                      </p>
+                    ) : aduoOpen === l.id ? (
+                      <div className="space-y-2 rounded-md border border-line bg-paper p-3">
+                        <p className="text-[11px] font-medium text-ink">Apply for an ADUO boost</p>
+                        <p className="text-[11px] leading-snug text-ink-faint">
+                          Traffic trend and external reviews cannot be checked from here — this site
+                          runs no analytics and has no review provider. Point to the evidence and a
+                          person verifies it. Nothing is decided by a machine, and the thresholds are
+                          not yet ratified.
+                        </p>
+                        <input
+                          value={aduoForm.traffic ?? ''}
+                          onChange={(e) => setAduoForm({ ...aduoForm, traffic: e.target.value })}
+                          placeholder="Traffic evidence — a public source a reviewer can open"
+                          className="min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-xs text-ink sm:min-h-0 sm:py-1.5"
+                        />
+                        <input
+                          value={aduoForm.reviews ?? ''}
+                          onChange={(e) => setAduoForm({ ...aduoForm, reviews: e.target.value })}
+                          placeholder="Review evidence — app store, forum, anywhere off-site"
+                          className="min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-xs text-ink sm:min-h-0 sm:py-1.5"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => applyAduo(l.id)}
+                            disabled={aduoBusy}
+                            className="inline-flex min-h-[44px] items-center rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 sm:min-h-[36px]"
+                          >
+                            {aduoBusy ? 'Submitting…' : 'Submit application'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setAduoOpen(null)}
+                            className="inline-flex min-h-[44px] items-center rounded-md px-3 py-1.5 text-xs text-ink-faint sm:min-h-[36px]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAduoForm({})
+                          setAduoOpen(l.id)
+                        }}
+                        className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint sm:min-h-[36px]"
+                      >
+                        Apply for ADUO boost
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
           />
         </section>
       )}
@@ -457,7 +598,8 @@ export default function Directory() {
         title={
           <span className="flex flex-wrap items-center gap-2">
             ADUO — balance-of-performance boost
-            <Pill tone="unknown">Stage 3 — not built</Pill>
+            <Pill tone="accent">Mechanism live</Pill>
+            <Pill tone="unknown">Thresholds UNRATIFIED</Pill>
           </span>
         }
       >
@@ -465,6 +607,19 @@ export default function Directory() {
           Named after F1-style performance balancing: a listing with few upvotes but strong underlying
           signals gets extra visibility, so good undiscovered tools are not buried under incumbents who won
           early and snowballed on raw vote count.
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+          You can apply from your own listings. A person reviews every application and records what
+          the decision was based on. <strong className="text-ink">No listing is boosted
+          automatically</strong> — not by crossing a threshold, not by waiting long enough. Every
+          grant is a manual founder decision, shown on the listing, and written to the audit log.
+        </p>
+        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+          Of the four criteria, two are checked by the machine (the transparency score of the linked
+          Phase 1 row, and the upvote ceiling) and two cannot be (traffic trend and external reviews —
+          this site runs no analytics and has no review provider). Those two come from evidence you
+          supply and a human verifies. A boost reorders <em>this directory only</em>. It never touches
+          a transparency score or the public comparison.
         </p>
 
         <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-white">
@@ -491,9 +646,9 @@ export default function Directory() {
         <Callout variant="warn" className="mt-3" title="UNRATIFIED — do not treat these as final">
           These thresholds are proposed, not decided. They must be ratified <strong>before</strong> the
           first grant, not after: deciding the bar once you can see who clears it turns a rule into a
-          favour. When Stage 3 is built, the mechanism will run against these numbers but no listing will
-          receive a boost automatically — every grant is a manual founder decision, recorded on the
-          listing.
+          favour. The mechanism below runs against them and marks them as unratified everywhere they
+          appear — but until they are agreed, every grant is a provisional decision that will need to
+          be revisited once they are.
         </Callout>
 
         <Callout variant="note" className="mt-3" title="Known gap">

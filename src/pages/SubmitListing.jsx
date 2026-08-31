@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import { makeToken, snippetTag } from '../lib/snippet.js'
+import { siteKeyOf } from '../lib/sites.js'
 import { CATEGORIES } from '../data/schema.js'
 import { TOOLS } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
@@ -22,6 +23,7 @@ export default function SubmitListing() {
   const [created, setCreated] = useState(null)
   const [verifyState, setVerifyState] = useState(null)
   const [error, setError] = useState(null)
+  const [duplicate, setDuplicate] = useState(null)
 
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
@@ -56,8 +58,24 @@ export default function SubmitListing() {
     e.preventDefault()
     setSaving(true)
     setError(null)
+    setDuplicate(null)
     const token = makeToken()
     const url = form.url.startsWith('http') ? form.url : `https://${form.url}`
+
+    // Check before writing, so a submitter whose first attempt looked broken
+    // does not end up with three copies of the same claim.
+    const { data: existing } = await supabase
+      .from('listings')
+      .select('id, name, status, snippet_state')
+      .eq('owner_id', user.id)
+      .eq('site_key', siteKeyOf(url))
+      .maybeSingle()
+
+    if (existing) {
+      setSaving(false)
+      setDuplicate(existing)
+      return
+    }
 
     const { data, error: insertError } = await supabase
       .from('listings')
@@ -77,8 +95,16 @@ export default function SubmitListing() {
       .single()
 
     setSaving(false)
-    if (insertError) setError(insertError.message)
-    else setCreated(data)
+    if (insertError) {
+      // The database is the real guard; this just says it in words.
+      setError(
+        /duplicate key|unique/i.test(insertError.message)
+          ? 'You have already submitted this site. One submission per site, per account.'
+          : insertError.message
+      )
+      return
+    }
+    setCreated(data)
   }
 
   const verify = async () => {
@@ -153,6 +179,18 @@ export default function SubmitListing() {
         Listing proves you control the site. It is not a quality mark, not a safety review, and it has no effect on the
         Phase 1 transparency database or any score in it.
       </Callout>
+
+      {duplicate && (
+        <Callout variant="warn" title="You have already submitted this site">
+          <strong className="text-ink">{duplicate.name}</strong> — {duplicate.status}, snippet{' '}
+          {duplicate.snippet_state}. One submission per site, per account, so a claim cannot be
+          duplicated by accident.{' '}
+          <Link to="/directory" className="text-accent underline underline-offset-2">
+            Go to your submission
+          </Link>{' '}
+          to re-check it or fix it.
+        </Callout>
+      )}
 
       <form onSubmit={submit} className="space-y-4 rounded-lg border border-line bg-white p-4">
         <label className="block text-xs text-ink-faint">

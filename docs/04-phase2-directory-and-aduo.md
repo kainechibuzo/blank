@@ -6,12 +6,13 @@
 |---|---|
 | Accounts (email/password + Google) | **Live** — Supabase Auth |
 | 24-hour edit window + re-verification | **Live** |
+| Duplicate-submission prevention | **Live** — one submission per site, per account |
 | Directory submission + snippet issuance | **Live** — `/directory/submit` |
 | On-demand ownership verification | **Live** — `verify-snippet` Edge Function |
 | Weekly snippet re-check + tamper warning | **Live** — `scripts/check-directory-snippets.mjs`, Thursdays 07:23 UTC |
 | `/directory` listing page | **Live** — shows confirmed submissions only |
 | Upvoting + anti-gaming | **Live** — see below |
-| ADUO | **Not built** (Stage 3). Thresholds below are **UNRATIFIED**. |
+| ADUO | **Mechanism live** (Stage 3). Thresholds below are **UNRATIFIED** and no grant is automatic. |
 
 Everything live here is inert until a Supabase project is configured. With no env
 vars the app still builds and every route renders; the directory explains what is
@@ -83,6 +84,25 @@ should not be stuck.
 
 Verification state itself can never be set by hand — `snippet_state` is written only by the bot, so
 an owner cannot mark their own tag "ok" and skip the crawl.
+
+## Duplicate submissions
+
+One submission per site, per account. Without that rule, a submitter whose first attempt appeared to
+do nothing — usually because the verification function was not deployed yet — could pile up copies of
+the same claim, and the directory fills with duplicates.
+
+- every listing carries a `site_key`: host + path, lowercased, with scheme, `www.`, query string and
+  trailing slash stripped. `https://Example.com/` and `http://www.example.com/?utm=x` are the same site
+- a unique index on `(owner_id, site_key)` makes the duplicate impossible at the database level, not
+  just hard to do in the interface
+- the form checks first and says so: *"You have already submitted this site"*, with a link to the
+  existing submission
+- the normalisation rules exist twice — `src/lib/sites.js` and `public.site_key_of()` in the database —
+  and a check fails the build if either disappears
+
+Two **different** accounts claiming the same site is allowed, because a constraint cannot decide who is
+right. Only one of them can actually place the verification tag, so the other simply never verifies.
+`/admin` lists these as duplicate claims for a person to resolve.
 
 ## Tamper detection
 
@@ -187,22 +207,45 @@ Named after F1-style performance balancing. A listing with few upvotes but stron
 gets extra visibility, so good undiscovered tools are not permanently buried under incumbents who won
 early and snowballed on raw vote count.
 
-### Proposed thresholds — UNRATIFIED, NOT BUILT
+### Proposed thresholds — UNRATIFIED
 
-| Signal | Proposed threshold | Note |
+| Signal | Proposed threshold | Checked by |
 |---|---|---|
-| Traffic trend | ≥ 15% MoM growth over 3 months from ≥ 1,000 monthly visits | Only usable once a footprint exists |
-| External reviews | ≥ 10 off-site reviews, median sentiment ≥ 4/5, ≥ 3 substantive | Substance over volume; app stores and forums, not the tool's own site |
-| ToS / privacy score | ≥ 60/100 with coverage ≥ 70% | Drawn from Phase 1 data. An unverified row cannot qualify |
-| Upvote ceiling | < 50 upvotes | Above this, presumed able to compete on votes alone |
+| Traffic trend | ≥ 15% MoM growth over 3 months from ≥ 1,000 monthly visits | **A human**, from evidence the applicant supplies |
+| External reviews | ≥ 10 off-site reviews, median sentiment ≥ 4/5, ≥ 3 substantive | **A human**, from evidence the applicant supplies |
+| ToS / privacy score | ≥ 60/100 with coverage ≥ 70%, and the row must be verified | **The machine** |
+| Upvote ceiling | Decayed score < 50 | **The machine** |
 
-These are **proposed, not decided**, and the mechanism does not exist yet. When it is built:
+These are **proposed, not decided**. They must be ratified **before** the first grant, not after:
+deciding the bar once you can see who clears it turns a rule into a favour. The mechanism marks them
+unratified everywhere they appear, and every grant records that it was made against unratified
+thresholds — so if they move later, history says which decisions need revisiting.
 
-- the three signal checks run against these numbers, marked in the UI as UNRATIFIED;
-- **no listing receives a boost automatically** — every grant is a manual founder decision, recorded
-  on the listing;
-- thresholds must be ratified **before** the first grant. Deciding the bar once you can see who clears
-  it turns a rule into a favour.
+### How a grant actually happens
+
+1. An owner applies from their own **listed** submission, supplying whatever evidence they have for
+   traffic and reviews.
+2. `/admin` shows the application with all four criteria: the two machine-checked ones with their
+   actual numbers, the two human ones as attestations the founder has to tick *after* reading the
+   evidence.
+3. The founder grants or declines, with a written reason. The decision, the numbers at the time, and
+   whether the thresholds were ratified are all stored on the application and written to the audit
+   log.
+
+**Nothing is automatic.** Crossing the thresholds does not grant anything; waiting does not grant
+anything. The Grant button is disabled unless the two machine checks pass, both human checks are
+attested, and a reason is written — ADUO is criteria-bound, not discretionary.
+
+Two of the four criteria cannot be computed here, and that is stated rather than faked: this site runs
+no analytics and has no review provider. Inventing a traffic number would be worse than admitting it
+is unknown. Those two come from evidence a person verifies.
+
+### What the boost does, and what it cannot
+
+A granted listing is shown **above** the others in the directory, badged `ADUO boost`, because the
+whole point is visibility a low-vote listing could not otherwise get. That is the only effect. It
+never enters a transparency score, never reorders `/compare`, and never influences a chat
+recommendation — the ranking path is checked to contain no reference to ADUO at all.
 
 ### Rules
 
