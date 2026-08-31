@@ -113,7 +113,10 @@ export default function Compare() {
                 ))}
               </div>
             )}
-            <div className="ml-auto flex items-center gap-2">
+            {/* Wraps, and the select is capped: a <select> will not shrink
+                below its longest option, so "Most recently verified" plus the
+                label and the copy button used to push past a phone screen. */}
+            <div className="ml-auto flex flex-wrap items-center gap-2">
               <label htmlFor="sort" className="text-xs text-ink-faint">
                 Sort
               </label>
@@ -121,7 +124,7 @@ export default function Compare() {
                 id="sort"
                 value={state.sort}
                 onChange={(e) => update({ ...state, sort: e.target.value })}
-                className="min-h-[38px] rounded-md border border-line bg-white px-2 py-1.5 text-sm text-ink sm:min-h-0 sm:py-1"
+                className="min-h-[38px] max-w-[11rem] rounded-md border border-line bg-white px-2 py-1.5 text-xs text-ink sm:min-h-0 sm:max-w-none sm:py-1 sm:text-sm"
               >
                 {SORTS.map((s) => (
                   <option key={s.id} value={s.id}>
