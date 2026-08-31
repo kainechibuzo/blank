@@ -63,8 +63,44 @@ npm run dev            # http://localhost:5173
 | `npm run check:render` | Headless render of every route, catches runtime crashes |
 | `npm run check` | Both of the above — wire this into CI |
 | `npm run check:policies` | Weekly policy hash check; add `--save` to record baselines |
+| `npm run check:snippets` | Weekly directory ownership re-check; `--dry-run`, `--only=<id>` |
 
 ---
+
+## Phase 2 directory (Supabase setup)
+
+Phase 1 needs no backend at all — the site builds, deploys and passes CI with zero
+configuration. The directory does need one. Until it is configured, `/directory`,
+`/directory/submit` and `/account` render an explicit "not configured" state
+rather than failing.
+
+1. **Create a Supabase project**, then run the migration in the SQL editor:
+   `supabase/migrations/0001_phase2_directory.sql`. It creates `profiles`,
+   `listings` and the append-only `snippet_checks` log, turns on row level
+   security, and installs the trigger that stops anyone but a founder from
+   changing a listing's status.
+2. **Set the browser env vars** (see `.env.example`):
+   `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPPORT_EMAIL`. The anon
+   key is designed to be public; row level security is what protects data.
+3. **Enable Google** in Supabase Auth → Providers, using your own Google OAuth
+   client. Nothing about that touches this repo's code.
+4. **Deploy the verification function**: `supabase functions deploy verify-snippet`,
+   with `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` set as
+   function secrets. The service role key never appears in browser code — a
+   traceability check fails the build if it is ever referenced under `src/`.
+5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
+   GitHub Actions secrets. Without them the workflow skips cleanly and says so.
+
+### Separation of the two datasets
+
+The provider database is a static module imported by the app; the directory lives
+in Postgres. Nothing flows from the directory into scoring or ranking:
+
+- `src/lib/scoring.js`, `src/lib/filters.js` and `src/lib/chat.js` are checked to
+  contain no reference to Supabase or the directory tables;
+- provider rows are scanned for `upvotes`, `aduo`, `traffic`,
+  `review_sentiment` and `campaign` fields, none of which may ever appear;
+- a listing may link to a Phase 1 tool row for display only.
 
 ## Deploying to Vercel
 
@@ -148,12 +184,10 @@ Both workflows live in `.github/workflows/` and are active:
 - `policy-hash-check.yml` — weekly cron (Mondays 06:17 UTC) and manual dispatch. It re-hashes every
   policy page, commits the updated baseline, and **opens a GitHub issue listing exactly which tools
   need a human re-read**. That issue is the verification work queue.
-
-- `ci.yml` — runs `npm run check` (traceability assertions + route render smoke test) on every push
-  and pull request.
-- `policy-hash-check.yml` — weekly cron (Mondays 06:17 UTC) and manual dispatch. It re-hashes every
-  policy page, commits the updated baseline, and **opens a GitHub issue listing exactly which tools
-  need a human re-read**. That issue is the verification work queue.
+- `directory-snippet-check.yml` — weekly cron (Thursdays 07:23 UTC). Re-checks every directory
+  ownership tag, appends to the check log, flags anything that stopped confirming, and opens a review
+  issue. It never delists; without Supabase secrets it skips cleanly.
+  **Parked in `ops/workflows/`** — move it into `.github/workflows/` to activate it (see above).
 
 Note for future agents: GitHub rejects workflow files pushed by an app without the `workflows`
 permission, which is why these originally landed in `ops/workflows/` and were moved by hand.
@@ -171,13 +205,22 @@ src/
   lib/chat.js          deterministic query → filters parser (Phase 3)
   lib/traceability.js  the hard rules, executable
   lib/watchlist.js     browser-local "watch this tool"
+  lib/auth.jsx         accounts (email/password + Google), account age
+  lib/supabase.js      the only client that touches the directory database
+  lib/snippet.js       ownership verification — public crawl only
+  lib/snippet-warning.js  the four-part tamper warning
   components/          Layout, ToolCard, FilterRail, ScoreDial, Pill, …
   pages/               Home, Compare, ToolPage, Discover, Methodology, Charter, Directory, Sponsors
 scripts/
-  check-policy-hashes.mjs   weekly freshness: fetch → normalise → hash → report
-  traceability-check.mjs    CI assertion runner
-  render-check.jsx          SSR smoke test for every route
-docs/                  the written rules
+  check-policy-hashes.mjs       weekly freshness: fetch → normalise → hash → report
+  check-directory-snippets.mjs  weekly ownership re-check: flag, never delist
+  traceability-check.mjs        CI assertion runner
+  lib/traceability-source.js    source-scanning rules (node only)
+  render-check.jsx              SSR smoke test for every route
+supabase/
+  migrations/0001_phase2_directory.sql  tables, RLS, founder-only status guard
+  functions/verify-snippet/             on-demand ownership verification
+docs/                      the written rules
 ```
 
 ---

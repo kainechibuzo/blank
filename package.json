@@ -14,9 +14,11 @@
     "check:policies": "node scripts/check-policy-hashes.mjs",
     "check:traceability": "node scripts/traceability-check.mjs",
     "check:render": "esbuild scripts/render-check.jsx --bundle --platform=node --format=esm --outfile=node_modules/.cache/render-check.mjs --loader:.jsx=jsx --jsx=automatic --packages=external --log-level=warning && node node_modules/.cache/render-check.mjs",
-    "check": "npm run check:traceability && npm run check:render"
+    "check": "npm run check:traceability && npm run check:render",
+    "check:snippets": "node scripts/check-directory-snippets.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.6.0"

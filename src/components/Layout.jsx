@@ -6,9 +6,10 @@ import { DATASET_META as META } from '../data/tools.js'
 const NAV = [
   { to: '/compare', label: 'Compare' },
   { to: '/discover', label: 'Discover', chip: 'Phase 3' },
-  { to: '/directory', label: 'Directory', chip: 'Phase 2' },
+  { to: '/directory', label: 'Directory' },
   { to: '/methodology', label: 'Methodology' },
   { to: '/charter', label: 'The one rule' },
+  { to: '/account', label: 'Account' },
   { to: '/sponsors', label: 'Sponsors', muted: true },
 ]
 
