@@ -1,5 +1,6 @@
 # [Working Title] — AI Transparency & Comparison
 
+
 A public database and comparison tool that tells people, in plain English, what AI products actually
 do with their data — and helps them find the best-fit tool without ad-influenced rankings.
 
