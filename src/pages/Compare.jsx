@@ -4,6 +4,7 @@ import { TOOLS } from '../data/tools.js'
 import { SORTS, FILTER_BY_ID, CATEGORIES } from '../data/schema.js'
 import { rankTools, encodeState, decodeState } from '../lib/filters.js'
 import FilterRail from '../components/FilterRail.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 import ToolCard from '../components/ToolCard.jsx'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
@@ -47,7 +48,7 @@ export default function Compare() {
   return (
     <div className="space-y-6">
       <header className="max-w-3xl">
-        <h1 className="text-3xl font-semibold text-ink">Comparison</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Comparison</h1>
         <p className="mt-2 text-ink-soft">
           Every filter here is a plain predicate over the tracked fields. The chat on{' '}
           <Link to="/discover" className="text-accent underline underline-offset-2">
@@ -57,8 +58,17 @@ export default function Compare() {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <div className="space-y-4">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_1fr]">
+        {/* On a phone the whole filter column folds away behind one row that
+            still reports how many filters are on, so the results stay visible
+            without scrolling past eleven checkboxes. */}
+        <Collapsible
+          title="Filters"
+          count={state.filters.length + (state.category?.length ?? 0)}
+          countLabel=" on"
+          className="space-y-4"
+          contentClassName="space-y-4"
+        >
           <FilterRail
             tools={TOOLS}
             active={state.filters}
@@ -85,7 +95,7 @@ export default function Compare() {
               })}
             </div>
           </div>
-        </div>
+        </Collapsible>
 
         <div>
           <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-white px-4 py-3">

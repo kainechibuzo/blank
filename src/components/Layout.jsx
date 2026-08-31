@@ -249,12 +249,23 @@ export default function Layout() {
       {/* Permanent, non-dismissible. Anyone who lands on any page learns the
           state of the data before they read a single number. */}
       <div className="hatch border-b border-mixed/30 bg-mixed-soft">
+        {/* Two lines on a phone instead of four. The warning is mandatory; its
+            word count is not. */}
         <div className="mx-auto max-w-6xl px-4 py-2 text-center text-xs leading-relaxed text-mixed">
-          <strong className="font-semibold">Draft dataset.</strong> All {META.tool_count} rows are
-          unverified — {META.verified_count} confirmed by a human. Nothing here is citable yet.{' '}
-          <Link to="/methodology" className="underline underline-offset-2">
-            How verification works
-          </Link>
+          <span className="sm:hidden">
+            <strong className="font-semibold">Draft.</strong> {META.verified_count} of {META.tool_count}{' '}
+            verified — nothing here is citable yet.{' '}
+            <Link to="/methodology" className="underline underline-offset-2">
+              Why
+            </Link>
+          </span>
+          <span className="hidden sm:inline">
+            <strong className="font-semibold">Draft dataset.</strong> All {META.tool_count} rows are
+            unverified — {META.verified_count} confirmed by a human. Nothing here is citable yet.{' '}
+            <Link to="/methodology" className="underline underline-offset-2">
+              How verification works
+            </Link>
+          </span>
         </div>
       </div>
 
@@ -313,13 +324,13 @@ export default function Layout() {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-5 sm:py-8">
         <Outlet />
       </main>
 
       <footer className="mt-8 border-t border-line bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-10">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:py-10">
+          <div className="grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-4">
             <div className="lg:col-span-2">
               <p className="font-mono text-sm font-semibold text-ink">{SITE.name}</p>
               <p className="mt-2 max-w-sm text-xs leading-relaxed text-ink-soft">{SITE.tagline}</p>

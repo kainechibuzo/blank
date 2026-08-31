@@ -31,7 +31,7 @@ export default function Account() {
   if (!configured) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold text-ink">Account</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Account</h1>
         <Callout variant="warn" title="Accounts are not configured yet">
           Set <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{' '}
           <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code> in <code className="font-mono text-xs">.env</code>{' '}
@@ -68,7 +68,7 @@ export default function Account() {
   if (!user) {
     return (
       <div className="mx-auto max-w-md space-y-6">
-        <h1 className="text-3xl font-semibold text-ink">{mode === 'signin' ? 'Sign in' : 'Create an account'}</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">{mode === 'signin' ? 'Sign in' : 'Create an account'}</h1>
         <p className="text-sm text-ink-soft">
           Accounts exist so submissions and votes have an owner and an age. Nothing here is used to rank the Phase 1
           comparison.
@@ -125,7 +125,7 @@ export default function Account() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-semibold text-ink">Account</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Account</h1>
         <button onClick={signOut} className="rounded-md border border-line px-3 py-1.5 text-sm text-ink-soft">
           Sign out
         </button>

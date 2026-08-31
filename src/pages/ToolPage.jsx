@@ -9,6 +9,7 @@ import Pill from '../components/Pill.jsx'
 import ScoreDial from '../components/ScoreDial.jsx'
 import Callout from '../components/Callout.jsx'
 import SourceList from '../components/SourceList.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 import VerificationBadge from '../components/VerificationBadge.jsx'
 
 function residencySummary(r) {
@@ -58,7 +59,7 @@ export default function ToolPage() {
       <header className="flex flex-wrap items-start gap-4">
         <Monogram tool={tool} size="lg" />
         <div className="min-w-0 flex-1">
-          <h1 className="text-3xl font-semibold text-ink">{tool.name}</h1>
+          <h1 className="text-2xl sm:text-3xl font-semibold text-ink">{tool.name}</h1>
           <p className="mt-1 text-sm text-ink-soft">
             {tool.vendor} · {tool.category_label} · {tool.hq}
           </p>
@@ -174,12 +175,9 @@ export default function ToolPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-lg border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold text-ink">Sources a reviewer must read</h2>
-            <div className="mt-3">
-              <SourceList sources={tool.policy_sources} tool={tool} />
-            </div>
-          </div>
+          <Collapsible title="Sources a reviewer must read" count={tool.policy_sources?.length ?? 0}>
+            <SourceList sources={tool.policy_sources} tool={tool} />
+          </Collapsible>
 
           <div className="rounded-lg border border-dashed border-line bg-transparent p-4">
             <div className="flex items-center gap-2">

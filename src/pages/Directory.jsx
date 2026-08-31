@@ -21,6 +21,7 @@ import { TOOL_BY_ID } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
 import Monogram from '../components/Monogram.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 
 const THRESHOLDS = [
   ['Traffic trend', '≥ 15% month-on-month growth over 3 months, from a base of ≥ 1,000 monthly visits', 'Reliable only once a footprint exists — see the known gap below.'],
@@ -294,13 +295,13 @@ export default function Directory() {
   const blockedReason = voteBlockReason({ user, accountAgeDays })
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-7 sm:space-y-10">
       <header className="max-w-3xl">
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="accent">Phase 2 — live</Pill>
           <Pill tone="neutral">Ownership verified · voting live</Pill>
         </div>
-        <h1 className="mt-3 text-3xl font-semibold text-ink">Directory</h1>
+        <h1 className="mt-3 text-2xl sm:text-3xl font-semibold text-ink">Directory</h1>
         <p className="mt-2 text-ink-soft">
           Community-submitted tools, each proven to be controlled by the person who submitted it. This is a
           separate axis from the transparency database: Phase 1 answers “is it honest with my data”, this
@@ -348,7 +349,7 @@ export default function Directory() {
 
       {configured && (
         <section>
-          <h2 className="text-xl font-semibold text-ink">Listed tools</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-ink">Listed tools</h2>
           {loading ? (
             <p className="mt-2 text-sm text-ink-soft">Loading…</p>
           ) : listings.length === 0 ? (
@@ -379,7 +380,7 @@ export default function Directory() {
 
       {mine.length > 0 && (
         <section>
-          <h2 className="text-xl font-semibold text-ink">Your submissions</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-ink">Your submissions</h2>
           <ul className="mt-3 space-y-3">
             {mine.map((l) => (
               <li key={l.id} className="rounded-lg border border-line bg-white p-3">
@@ -438,7 +439,7 @@ export default function Directory() {
       )}
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">How verification works</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">How verification works</h2>
         <ol className="mt-3 grid gap-3 sm:grid-cols-3">
           {[
             ['1. Submit', 'You add the product and say what it is. A unique verification tag is issued to you.'],
@@ -454,23 +455,36 @@ export default function Directory() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">The warning an owner receives</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">The warning an owner receives</h2>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft">
           Published in full, because a warning people cannot see is a warning that can quietly get worse
           later. This is the exact text the weekly check writes to a listing when a previously confirmed
           tag stops confirming.
         </p>
-        <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-white p-4 font-mono text-[11px] leading-relaxed text-ink-soft">
-          {SAMPLE_WARNING.text}
-        </pre>
+        <Collapsible
+          title="Read the exact message"
+          collapseOnDesktop
+          defaultOpen
+          className="mt-3"
+        >
+          <pre className="overflow-x-auto font-mono text-[11px] leading-relaxed text-ink-soft">
+            {SAMPLE_WARNING.text}
+          </pre>
+        </Collapsible>
       </section>
 
-      <section>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-xl font-semibold text-ink">ADUO — balance-of-performance boost</h2>
-          <Pill tone="unknown">Stage 3 — not built</Pill>
-        </div>
-        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+      <Collapsible
+        collapseOnDesktop
+        defaultOpen
+        titleClassName="text-base font-semibold text-ink"
+        title={
+          <span className="flex flex-wrap items-center gap-2">
+            ADUO — balance-of-performance boost
+            <Pill tone="unknown">Stage 3 — not built</Pill>
+          </span>
+        }
+      >
+        <p className="max-w-3xl text-sm text-ink-soft">
           Named after F1-style performance balancing: a listing with few upvotes but strong underlying
           signals gets extra visibility, so good undiscovered tools are not buried under incumbents who won
           early and snowballed on raw vote count.
@@ -509,7 +523,7 @@ export default function Directory() {
           Traffic data is least reliable for exactly the earliest-stage tools ADUO is meant to help. For
           very early submissions, evaluate on reviews and ToS score alone, and add traffic once it exists.
         </Callout>
-      </section>
+      </Collapsible>
 
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-lg border border-bad/30 bg-bad-soft p-4">

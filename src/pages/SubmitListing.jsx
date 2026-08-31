@@ -28,7 +28,7 @@ export default function SubmitListing() {
   if (!configured) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold text-ink">Submit a tool</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Submit a tool</h1>
         <Callout variant="warn" title="Submissions are closed">
           The directory needs a Supabase project before it can accept anything. See{' '}
           <code className="font-mono text-xs">.env.example</code>.
@@ -40,7 +40,7 @@ export default function SubmitListing() {
   if (!user) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold text-ink">Submit a tool</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Submit a tool</h1>
         <Callout variant="note" title="Sign in first">
           Submissions need an owner so that ownership can be proven and re-checked.{' '}
           <Link to="/account" className="underline underline-offset-2">
@@ -106,7 +106,7 @@ export default function SubmitListing() {
     const info = outcome ? OUTCOMES[outcome] : null
     return (
       <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-3xl font-semibold text-ink">Verify ownership</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Verify ownership</h1>
         <p className="text-sm text-ink-soft">
           One static line of HTML proves whoever controls the site submitted it. No script, no tracking, no access to
           anything — and you can remove it yourself whenever you like.
@@ -148,7 +148,7 @@ export default function SubmitListing() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-3xl font-semibold text-ink">Submit a tool</h1>
+      <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Submit a tool</h1>
       <Callout variant="note" title="What listing does and does not mean">
         Listing proves you control the site. It is not a quality mark, not a safety review, and it has no effect on the
         Phase 1 transparency database or any score in it.

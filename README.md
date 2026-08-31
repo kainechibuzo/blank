@@ -233,6 +233,8 @@ src/
   lib/supabase.js      the only client that touches the directory database
   lib/snippet.js       ownership verification — public crawl only
   lib/snippet-warning.js  the four-part tamper warning
+  lib/useMediaQuery.js    SSR-safe media query (drives the phone layout)
+  components/Collapsible.jsx  disclosure boxes that keep phone screens short
   components/          Layout, ToolCard, FilterRail, ScoreDial, Pill, …
   pages/               Home, Compare, ToolPage, Discover, Methodology, Charter, Directory, Sponsors
 scripts/

@@ -9,19 +9,25 @@ import ToolCard from '../components/ToolCard.jsx'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
 import Monogram from '../components/Monogram.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 import { scoreTool } from '../lib/scoring.js'
 
 function TracePanel({ plan, result, sig }) {
   const href = `/compare?${encodeState({ filters: result.filters, category: result.category, sort: 'score' })}`
   return (
-    <div className="mt-3 rounded-lg border border-line bg-white p-3 text-xs">
-      <p className="font-semibold text-ink">Traceability</p>
-      <p className="mt-1 text-ink-soft">
+    <Collapsible
+      title="Traceability"
+      collapseOnDesktop
+      defaultOpen
+      className="mt-3 text-xs"
+      contentClassName="space-y-2"
+    >
+      <p className="text-ink-soft">
         Produced by <code className="font-mono text-[11px]">rankTools(filters, category, sort:"score")</code> —
         the same function the public comparison page calls. No per-user weighting, no fresh judgement,
         nothing a sponsor could influence.
       </p>
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-ink-faint">Filters applied:</span>
         {result.filters.length ? (
           result.filters.map((id) => (
@@ -36,13 +42,13 @@ function TracePanel({ plan, result, sig }) {
           <Pill tone="neutral">category: {Array.isArray(result.category) ? result.category.join(', ') : result.category}</Pill>
         )}
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Link to={href} className="font-medium text-accent underline underline-offset-2">
           Open this exact result set on /compare →
         </Link>
         <span className="font-mono text-[11px] text-ink-faint">set-{sig}</span>
       </div>
-    </div>
+    </Collapsible>
   )
 }
 
@@ -156,7 +162,7 @@ export default function Discover() {
   return (
     <div className="space-y-6">
       <header className="max-w-3xl">
-        <h1 className="text-3xl font-semibold text-ink">Discovery</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Discovery</h1>
         <p className="mt-2 text-ink-soft">
           Describe what you need in your own words. This translates your words into the comparison
           filters, then ranks with the same function the comparison page uses.
@@ -250,9 +256,8 @@ export default function Discover() {
         </div>
 
         <aside className="space-y-4">
-          <div className="rounded-lg border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold text-ink">Try</h2>
-            <div className="mt-2 space-y-1.5">
+          <Collapsible title="Try">
+            <div className="space-y-1.5">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -266,14 +271,15 @@ export default function Discover() {
             <button onClick={reset} className="mt-3 text-xs text-ink-faint underline underline-offset-2">
               Reset conversation
             </button>
-          </div>
+          </Collapsible>
 
-          <div className="rounded-lg border border-line bg-white p-4">
-            <h2 className="text-sm font-semibold text-ink">Rule checks</h2>
-            <p className="mt-1 text-[11px] text-ink-faint">
-              Run live against the current dataset. These fail the build if violated.
-            </p>
-            <ul className="mt-2 space-y-1.5">
+          <Collapsible
+            title="Rule checks"
+            count={trace.passed}
+            countLabel={`/${trace.total} passing`}
+            hint="Run live against the current dataset. These fail the build if violated."
+          >
+            <ul className="space-y-1.5">
               {trace.checks.map((c) => (
                 <li key={c.name} className="text-[11px] leading-snug">
                   <span className={c.pass ? 'font-semibold text-good' : 'font-semibold text-bad'}>
@@ -286,7 +292,7 @@ export default function Discover() {
             <p className="mt-2 border-t border-line pt-2 text-[11px] text-ink-faint">
               {trace.passed}/{trace.total} passing
             </p>
-          </div>
+          </Collapsible>
 
           <Callout variant="note" title="Why this is not an LLM free-for-all">
             A model writing recommendations fresh in conversation would create a second ranking
@@ -296,13 +302,12 @@ export default function Discover() {
         </aside>
       </div>
 
-      <section className="rounded-lg border border-dashed border-line p-4">
-        <h2 className="text-sm font-semibold text-ink">Every tool the parser can return</h2>
-        <p className="mt-1 text-xs text-ink-faint">
-          The complete candidate set. Nothing outside this list can ever be recommended, because
-          nothing outside it has been scored.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-3">
+      <Collapsible
+        title="Every tool the parser can return"
+        count={TOOLS.length}
+        hint="The complete candidate set. Nothing outside this list can ever be recommended, because nothing outside it has been scored."
+      >
+        <div className="flex flex-wrap gap-3">
           {TOOLS.map((t) => (
             <span key={t.id} className="flex items-center gap-1.5 text-xs text-ink-soft">
               <Monogram tool={t} size="sm" />
@@ -313,7 +318,7 @@ export default function Discover() {
             </span>
           ))}
         </div>
-      </section>
+      </Collapsible>
     </div>
   )
 }

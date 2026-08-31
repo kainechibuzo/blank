@@ -3,6 +3,7 @@ import { TOOLS, DATASET_META } from '../data/tools.js'
 import { FIELDS, FIELD_ORDER, SITE } from '../data/schema.js'
 import { scoreTool } from '../lib/scoring.js'
 import ToolCard from '../components/ToolCard.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
 
@@ -52,12 +53,12 @@ export default function Home() {
   const top = [...TOOLS].map((t) => ({ t, s: scoreTool(t) })).sort((a, b) => b.s.score - a.s.score)
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-8 sm:space-y-12">
       <section className="max-w-3xl">
         <Pill tone="unknown" className="mb-4">
           Working title · pre-launch · draft data
         </Pill>
-        <h1 className="text-balance font-serif text-4xl leading-tight text-ink sm:text-5xl">
+        <h1 className="text-balance font-serif text-3xl leading-tight text-ink sm:text-5xl">
           What AI products actually do with your data, in plain English.
         </h1>
         <p className="mt-4 text-lg text-ink-soft">
@@ -90,7 +91,7 @@ export default function Home() {
 
       {/* New here? Three ways in, in the order people usually want them. */}
       <section>
-        <h2 className="text-xl font-semibold text-ink">Start here</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">Start here</h2>
         <p className="mt-1 text-sm text-ink-soft">Three ways in, depending on what you came for.</p>
         <ol className="mt-4 grid gap-4 sm:grid-cols-3">
           {STARTS.map((s) => (
@@ -117,7 +118,7 @@ export default function Home() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">Three signals, never blended into one score</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">Three signals, never blended into one score</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {SIGNALS.map((s) => (
             <div
@@ -140,24 +141,26 @@ export default function Home() {
 
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold text-ink">Eight facts, tracked for every tool</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-ink">Eight facts, tracked for every tool</h2>
           <Link to="/methodology" className="text-sm text-accent hover:underline">
             Why these eight →
           </Link>
         </div>
-        <dl className="mt-4 grid gap-x-8 gap-y-3 sm:grid-cols-2">
-          {FIELD_ORDER.map((key) => (
-            <div key={key} className="border-t border-line pt-3">
-              <dt className="text-sm font-medium text-ink">{FIELDS[key].label}</dt>
-              <dd className="mt-0.5 text-sm text-ink-soft">{FIELDS[key].question}</dd>
-            </div>
-          ))}
-        </dl>
+        <Collapsible title="The eight fields" count={FIELD_ORDER.length} className="mt-4">
+          <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {FIELD_ORDER.map((key) => (
+              <div key={key} className="border-t border-line pt-3">
+                <dt className="text-sm font-medium text-ink">{FIELDS[key].label}</dt>
+                <dd className="mt-0.5 text-sm text-ink-soft">{FIELDS[key].question}</dd>
+              </div>
+            ))}
+          </dl>
+        </Collapsible>
       </section>
 
       <section>
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold text-ink">Highest-scoring rows right now</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-ink">Highest-scoring rows right now</h2>
           <Link to="/compare" className="text-sm text-accent hover:underline">
             See all {DATASET_META.tool_count} →
           </Link>

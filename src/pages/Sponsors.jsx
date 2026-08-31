@@ -21,7 +21,7 @@ export default function Sponsors() {
       </div>
 
       <header className="max-w-3xl">
-        <h1 className="text-3xl font-semibold text-ink">Sponsors &amp; funding</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Sponsors &amp; funding</h1>
         <p className="mt-2 text-ink-soft">
           The comparison is the product. Funding pays for the work around it, and the separation is
           structural rather than promised.
@@ -59,7 +59,7 @@ export default function Sponsors() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">Other revenue, all of it boring</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">Other revenue, all of it boring</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {[
             ['Donations', 'From people who want the transparency work to exist. No donor gets input on the data.'],

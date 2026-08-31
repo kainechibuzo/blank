@@ -45,7 +45,7 @@ export default function Charter() {
         <Pill tone="accent" className="mb-3">
           Written before there is revenue to bend it
         </Pill>
-        <h1 className="text-3xl font-semibold text-ink">The one rule</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">The one rule</h1>
         <p className="mt-2 text-ink-soft">
           Everything else in this product is downstream of this. It is written down now, while it is
           cheap to hold, because the pressure to blur it arrives later with money attached.
@@ -64,7 +64,7 @@ export default function Charter() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">What money can never touch</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">What money can never touch</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           {NEVER.map((n) => (
             <div key={n.title} className="rounded-lg border border-line bg-white p-4">
@@ -76,7 +76,7 @@ export default function Charter() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">What money can do</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">What money can do</h2>
         <ul className="mt-3 space-y-2 text-sm text-ink-soft">
           {ALLOWED.map((a) => (
             <li key={a} className="flex gap-2">
@@ -88,7 +88,7 @@ export default function Charter() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">How it is held structurally, not by vibe</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">How it is held structurally, not by vibe</h2>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft">
           Intentions erode. Structure doesn’t. Each of these is a property of the codebase that can
           be pointed at, tested, and broken only on purpose.
@@ -107,7 +107,7 @@ export default function Charter() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">Corollaries already committed to</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">Corollaries already committed to</h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <Callout variant="rule" title="No combined score">
             Transparency rating and community upvotes are separate signals with separate labels. They
@@ -131,7 +131,7 @@ export default function Charter() {
       </section>
 
       <section>
-        <h2 className="text-xl font-semibold text-ink">If the line is crossed</h2>
+        <h2 className="text-lg sm:text-xl font-semibold text-ink">If the line is crossed</h2>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft">
           Public correction on the affected page, naming what happened and what changed, with the
           amendment recorded below. Quiet fixes are the mechanism by which trust dies slowly instead

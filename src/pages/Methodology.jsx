@@ -5,6 +5,7 @@ import { POINTS, MAX, SCORE_BANDS } from '../lib/scoring.js'
 import { traceabilitySummary } from '../lib/traceability.js'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
+import Collapsible from '../components/Collapsible.jsx'
 
 const OPEN_QUESTIONS = [
   {
@@ -39,9 +40,9 @@ export default function Methodology() {
   const trace = traceabilitySummary()
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-7 sm:space-y-10">
       <header className="max-w-3xl">
-        <h1 className="text-3xl font-semibold text-ink">Methodology</h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Methodology</h1>
         <p className="mt-2 text-ink-soft">
           How the data is produced, what the numbers mean, and — most importantly — what they do not
           mean yet.
@@ -54,9 +55,7 @@ export default function Methodology() {
         as a placeholder until it says otherwise.
       </Callout>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">The eight fields, and why these eight</h2>
-        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+<Collapsible title="The eight fields, and why these eight" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
           Each field is a question a person actually asks before typing something sensitive into a
           box. Scope discipline matters: every extra field is permanent verification labour, and
           verification labour is the cost of this business.
@@ -81,11 +80,11 @@ export default function Methodology() {
             </tbody>
           </table>
         </div>
-      </section>
+</Collapsible>
 
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div>
-          <h2 className="text-xl font-semibold text-ink">Scoring</h2>
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <Collapsible title="Scoring" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">
+          <div>
           <p className="mt-2 text-sm text-ink-soft">
             Fixed, public weights. Unknown scores zero — a blank row can never look good — but
             unknown is not treated as a bad act either, which is why coverage is displayed beside
@@ -112,10 +111,11 @@ export default function Methodology() {
             Bands: {SCORE_BANDS.map((b) => `${b.label} ≥ ${b.min}`).join(' · ')}. Residency scores 10
             when an EU/UK option exists, 4 when regions are stated but no EU option, 0 when unknown.
           </p>
-        </div>
+          </div>
+        </Collapsible>
 
-        <div>
-          <h2 className="text-xl font-semibold text-ink">Staying fresh without re-scraping everything</h2>
+        <Collapsible title="Staying fresh without re-scraping everything" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">
+          <div>
           <p className="mt-2 text-sm text-ink-soft">
             Re-extracting every policy on a schedule gets slower and more expensive with every tool
             added. Instead, a weekly job fetches each policy page, normalises it (scripts, styles,
@@ -137,12 +137,11 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             database. It does not extend to providers behind logins, and it is not the same as the
             Phase 2 snippet, which only works where the counterparty is cooperating.
           </Callout>
-        </div>
-      </section>
+          </div>
+        </Collapsible>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">Verification workflow</h2>
-        <ol className="mt-3 grid gap-3 sm:grid-cols-4">
+<Collapsible title="Verification workflow" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">        <ol className="mt-3 grid gap-3 sm:grid-cols-4">
           {[
             ['1. Collect', 'Record the policy pages that govern the product, per tier. Enterprise and consumer terms are often different documents.'],
             ['2. Extract', 'LLM-assisted pass over each page to fill the eight fields. Output is a draft, never a publication.'],
@@ -160,11 +159,9 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
           date. Verification status and date are separate fields for a reason: a stale verified row is
           worse than an honest unknown.
         </Callout>
-      </section>
+</Collapsible>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">Rules enforced in code, not just prose</h2>
-        <p className="mt-2 text-sm text-ink-soft">
+<Collapsible title="Rules enforced in code" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink" count={trace.passed} countLabel=" passing">        <p className="mt-2 text-sm text-ink-soft">
           Run <code className="font-mono text-xs">npm run check:traceability</code> in CI. These are
           the same checks shown on the Discover page.
         </p>
@@ -179,11 +176,9 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             </li>
           ))}
         </ul>
-      </section>
+</Collapsible>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">Open questions</h2>
-        <div className="mt-3 space-y-3">
+<Collapsible title="Open questions" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink" count={OPEN_QUESTIONS.length} countLabel="">        <div className="mt-3 space-y-3">
           {OPEN_QUESTIONS.map((o) => (
             <div key={o.q} className="rounded-lg border border-line bg-white p-4">
               <h3 className="text-sm font-semibold text-ink">{o.q}</h3>
@@ -191,11 +186,9 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             </div>
           ))}
         </div>
-      </section>
+</Collapsible>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">Running cost</h2>
-        <div className="mt-3 overflow-x-auto rounded-lg border border-line bg-white">
+<Collapsible title="Running cost" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">        <div className="mt-3 overflow-x-auto rounded-lg border border-line bg-white">
           <table className="w-full min-w-[560px] text-left text-sm">
             <tbody className="divide-y divide-line">
               {COSTS.map(([item, cost, note]) => (
@@ -208,11 +201,9 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             </tbody>
           </table>
         </div>
-      </section>
+</Collapsible>
 
-      <section>
-        <h2 className="text-xl font-semibold text-ink">Explicitly not this product</h2>
-        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
+<Collapsible title="Explicitly not this product" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
           <li>
             <strong className="text-ink">Developer API eligibility by country/status.</strong> “Can I
             even use this API as a student in Nigeria?” is a real question with a different schema and
@@ -238,7 +229,7 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             the one rule →
           </Link>
         </p>
-      </section>
+</Collapsible>
     </div>
   )
 }
