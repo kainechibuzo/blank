@@ -12,7 +12,7 @@ import { band } from '../lib/scoring.js'
  * read: grey digits, an amber PROVISIONAL tag sitting above them, and the band
  * word replaced by "Provisional".
  */
-export default function ScoreDial({ score, coverage, size = 'md', provisional = false, className = '' }) {
+export default function ScoreDial({ score, coverage, size = 'md', provisional = false, badge = true, className = '' }) {
   const b = band(score)
   const big = size === 'lg'
   const color = { good: 'text-good', mixed: 'text-mixed', bad: 'text-bad' }[b.tone]
@@ -21,7 +21,7 @@ export default function ScoreDial({ score, coverage, size = 'md', provisional = 
 
   return (
     <div className={className}>
-      {provisional && (
+      {provisional && badge && (
         <p className="mb-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-mixed">
           Provisional
         </p>

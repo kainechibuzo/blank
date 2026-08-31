@@ -5,6 +5,7 @@
 | Piece | State |
 |---|---|
 | Accounts (email/password + Google) | **Live** — Supabase Auth |
+| 24-hour edit window + re-verification | **Live** |
 | Directory submission + snippet issuance | **Live** — `/directory/submit` |
 | On-demand ownership verification | **Live** — `verify-snippet` Edge Function |
 | Weekly snippet re-check + tamper warning | **Live** — `scripts/check-directory-snippets.mjs`, Thursdays 07:23 UTC |
@@ -50,6 +51,34 @@ traceability check asserts `src/lib/snippet.js` contains no auth, cookie, key or
 
 The submitter's own claim ("a music discovery site") is recorded so the review can confirm the live
 site matches what was claimed at submission.
+
+## Fixing a mistake
+
+Submission has a **24-hour editing window**. Within it the owner can correct the name, URL, category
+and the description of what the site is. After it, changes go through support by email.
+
+Why a window at all:
+
+- Refusing to let someone fix a typo forever is hostile.
+- Letting a *listed* entry be edited indefinitely would let it quietly become something different from
+  what was verified.
+
+Twenty-four hours is the compromise, and it is enforced in the database rather than by hiding a
+button: the update policy is `now() < editable_until`, and a trigger resets `editable_until` to its
+original value on every update, so the window cannot be extended — not by the owner, not by a
+founder, not by the weekly job. The UI constant is cross-checked against the SQL, so the sentence
+shown to a submitter cannot promise a window the database does not honour.
+
+**Changing the URL sends the listing back to pending.** It has to — the old verification proves
+control of the old address. A submitter may downgrade their own listing to pending inside the window;
+nobody can promote it except the bot, on a successful check.
+
+**Re-checking is never time-boxed.** "Re-check snippet" stays available after the window closes.
+Verification is not a one-shot favour granted at submission, and someone who left the page mid-setup
+should not be stuck.
+
+Verification state itself can never be set by hand — `snippet_state` is written only by the bot, so
+an owner cannot mark their own tag "ok" and skip the crawl.
 
 ## Tamper detection
 

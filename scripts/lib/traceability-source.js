@@ -197,5 +197,53 @@ export async function runSourceChecks() {
     'client calls cast-vote; inserts happen only inside the function'
   )
 
+  /* 9 — the 24-hour edit window is a promise made in the interface, so it has
+         to be the rule the database enforces. */
+  const listingsJs = await read('src/lib/listings.js')
+  const editSql = await read('supabase/migrations/0003_submission_edit_window.sql').catch(() => '')
+  const { EDIT_WINDOW_HOURS } = await import('../../src/lib/listings.js')
+
+  const sqlHours = editSql.match(/interval '(\d+) hours'/)?.[1]
+  push(
+    'Submission edit window in the UI matches the one the database enforces',
+    Number(sqlHours) === EDIT_WINDOW_HOURS,
+    `UI says ${EDIT_WINDOW_HOURS}h, database sets ${sqlHours ?? 'nothing'}`
+  )
+
+  push(
+    'Editing is time-boxed in row level security, not just hidden in the UI',
+    /now\(\)\s*<\s*editable_until/.test(editSql),
+    'update policy requires now() < editable_until'
+  )
+
+  push(
+    'The edit window cannot be extended',
+    /freeze_edit_window/.test(editSql),
+    'trigger resets editable_until to its original value on every update'
+  )
+
+  push(
+    'Verification state cannot be set by hand',
+    /guard_snippet_state/.test(editSql),
+    'only the weekly check (service role) may write snippet_state'
+  )
+
+  push(
+    'Re-verification is available after the edit window closes',
+    /requestVerification/.test(stripComments(listingsJs)) &&
+      /requestVerification/.test(stripComments(await read('src/pages/Directory.jsx'))),
+    'verification is not a one-shot favour granted at submission'
+  )
+
+  /* 10 — the stripes are gone, so this asserts the caveat survived the
+          redesign: an unverified card still differs from a verified one in
+          more than a single small pill. */
+  const card = stripComments(await read('src/components/ToolCard.jsx'))
+  push(
+    'Unverified rows remain visibly distinct without the striped wash',
+    /Draft — unverified/.test(card) && /border-mixed\/40/.test(card) && /hatch-edge/.test(card),
+    'labelled strip above the score, amber border, solid amber edge'
+  )
+
   return checks
 }

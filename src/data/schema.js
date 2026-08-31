@@ -8,9 +8,10 @@
  */
 
 export const SITE = {
-  // Deliberately unnamed. A name is a brand; a brand is a thing people will
-  // offer to sponsor. Pick it later, on purpose.
-  name: '[Working Title]',
+  // Descriptive rather than branded, because a placeholder wordmark in a fixed
+  // header reads as unfinished. This is the ONLY line to change to rename the
+  // site: nav, footer, page title and metadata all read from here.
+  name: 'AI Transparency',
   tagline: 'What AI products actually do with your data, in plain English.',
   phase: 'Phase 1 — transparency + comparison (Phase 3 chat discovery in preview)',
 }

@@ -26,7 +26,7 @@ export default function Pill({ tone = 'neutral', muted = false, children, title,
   return (
     <span
       title={title}
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${palette[tone] ?? palette.neutral} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium whitespace-nowrap ${palette[tone] ?? palette.neutral} ${className}`}
     >
       {children}
     </span>

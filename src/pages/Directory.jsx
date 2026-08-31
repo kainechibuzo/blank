@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
-import { supabase } from '../lib/supabase.js'
+import { supabase, SUPPORT_EMAIL } from '../lib/supabase.js'
 import { buildWarning } from '../lib/snippet-warning.js'
 import {
   VOTE_MIN_ACCOUNT_AGE_DAYS,
@@ -16,6 +16,7 @@ import {
   formatUpvoteScore,
 } from '../lib/votes.js'
 import Captcha from '../lib/captcha.jsx'
+import { EDIT_WINDOW_HOURS, editWindowOpen, editWindowRemaining, updateListing, requestVerification } from '../lib/listings.js'
 import { CATEGORIES } from '../data/schema.js'
 import { TOOL_BY_ID } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
@@ -217,6 +218,11 @@ export default function Directory() {
   const [captchaFor, setCaptchaFor] = useState(null)
   const [voteError, setVoteError] = useState(null)
   const [campaignNote, setCampaignNote] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [editBusy, setEditBusy] = useState(false)
+  const [editMessage, setEditMessage] = useState(null)
+  const [verifyBusyId, setVerifyBusyId] = useState(null)
 
   useEffect(() => {
     if (!supabase) return
@@ -250,7 +256,7 @@ export default function Directory() {
     }
     supabase
       .from('listings')
-      .select('id, name, url, status, snippet_state, review_required, warning_message')
+      .select('id, name, url, category, blurb, claimed_description, status, snippet_state, review_required, warning_message, editable_until, submitted_at')
       .eq('owner_id', user.id)
       .order('submitted_at', { ascending: false })
       .then(({ data }) => setMine(data ?? []))
@@ -290,6 +296,50 @@ export default function Directory() {
       return
     }
     setCampaigns(await fetchCampaignsThisWeek())
+  }
+
+  const startEdit = (l) => {
+    setEditMessage(null)
+    setEditingId(l.id)
+    setEditForm({
+      name: l.name,
+      url: l.url,
+      category: l.category ?? 'assistant',
+      blurb: l.blurb ?? '',
+      claimed_description: l.claimed_description ?? '',
+    })
+  }
+
+  const saveEdit = async (id) => {
+    setEditBusy(true)
+    setEditMessage(null)
+    const { data, error: saveError } = await updateListing(id, editForm)
+    setEditBusy(false)
+    if (saveError) {
+      setEditMessage({ tone: 'bad', text: saveError })
+      return
+    }
+    setMine((prev) => prev.map((l) => (l.id === id ? { ...l, ...data } : l)))
+    setEditingId(null)
+    setEditMessage({ tone: 'good', text: 'Saved. If you changed the address, the listing goes back to pending until it is verified again.' })
+  }
+
+  const recheck = async (id) => {
+    setVerifyBusyId(id)
+    setEditMessage(null)
+    const { data, error: checkError } = await requestVerification(id)
+    setVerifyBusyId(null)
+    if (checkError) {
+      setEditMessage({ tone: 'bad', text: checkError })
+      return
+    }
+    setMine((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, snippet_state: data.outcome, status: data.outcome === 'ok' ? 'listed' : l.status } : l))
+    )
+    setEditMessage({
+      tone: data.outcome === 'ok' ? 'good' : 'warn',
+      text: data.outcome === 'ok' ? 'Ownership confirmed.' : `Tag ${data.outcome}. ${data.note ?? ''}`.trim(),
+    })
   }
 
   const blockedReason = voteBlockReason({ user, accountAgeDays })
@@ -392,6 +442,90 @@ export default function Directory() {
                     {l.review_required && <Pill tone="bad">human review pending</Pill>}
                   </span>
                 </div>
+
+                {/* Fixing a mistake is allowed for a day; asking to be
+                    re-checked is allowed always. */}
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                  {editWindowOpen(l) ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => (editingId === l.id ? setEditingId(null) : startEdit(l))}
+                        className="inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint sm:min-h-[36px]"
+                      >
+                        {editingId === l.id ? 'Cancel' : 'Edit details'}
+                      </button>
+                      <span className="text-[11px] text-ink-faint">
+                        editable for {editWindowRemaining(l)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-ink-faint">
+                      The {EDIT_WINDOW_HOURS}-hour editing window has closed. Email{' '}
+                      {SUPPORT_EMAIL} to change anything now.
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => recheck(l.id)}
+                    disabled={verifyBusyId === l.id}
+                    className="ml-auto inline-flex min-h-[44px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint disabled:opacity-50 sm:min-h-[36px]"
+                  >
+                    {verifyBusyId === l.id ? 'Checking…' : 'Re-check snippet'}
+                  </button>
+                </div>
+
+                {editingId === l.id && (
+                  <div className="mt-3 space-y-3 rounded-md border border-line bg-paper p-3">
+                    <label className="block text-[11px] text-ink-faint">
+                      Name
+                      <input
+                        value={editForm.name ?? ''}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-sm text-ink sm:min-h-0 sm:py-1.5"
+                      />
+                    </label>
+                    <label className="block text-[11px] text-ink-faint">
+                      Public URL
+                      <input
+                        value={editForm.url ?? ''}
+                        onChange={(e) => setEditForm({ ...editForm, url: e.target.value })}
+                        className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-sm text-ink sm:min-h-0 sm:py-1.5"
+                      />
+                    </label>
+                    <label className="block text-[11px] text-ink-faint">
+                      What it is, in your own words
+                      <input
+                        value={editForm.claimed_description ?? ''}
+                        onChange={(e) => setEditForm({ ...editForm, claimed_description: e.target.value })}
+                        className="mt-1 min-h-[44px] w-full rounded-md border border-line px-2 py-2 text-sm text-ink sm:min-h-0 sm:py-1.5"
+                      />
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => saveEdit(l.id)}
+                        disabled={editBusy}
+                        className="inline-flex min-h-[44px] items-center rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 sm:min-h-[36px]"
+                      >
+                        {editBusy ? 'Saving…' : 'Save changes'}
+                      </button>
+                      <span className="self-center text-[11px] text-ink-faint">
+                        Changing the address sends the listing back to pending until it is verified
+                        again.
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {editMessage && editingId !== l.id && (
+                  <Callout
+                    variant={editMessage.tone === 'good' ? 'rule' : editMessage.tone === 'warn' ? 'warn' : 'danger'}
+                    className="mt-3"
+                  >
+                    {editMessage.text}
+                  </Callout>
+                )}
 
                 {l.status === 'listed' && !campaigns[l.id] && (
                   <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3">

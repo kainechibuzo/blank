@@ -8,7 +8,8 @@
 
   --color-ink: #14161a;
   --color-ink-soft: #52596b;
-  --color-ink-faint: #868d9e;
+  /* #868d9e was 3.0:1 on paper — below WCAG AA for body text. This is 4.6:1. */
+  --color-ink-faint: #6b7280;
   --color-paper: #faf9f6;
   --color-paper-raised: #ffffff;
   --color-line: #e4e1da;
@@ -58,19 +59,27 @@
   a {
     color: inherit;
   }
+  /* Inline links are read with a thumb on a phone. Vertical padding grows the
+     hit area without touching the line box, so wrapping is unaffected. */
+  @media (max-width: 767px) {
+    main a,
+    footer a {
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+  }
 }
 
 @layer utilities {
-  /* Visual language for unverified / draft data: a hatched edge that reads as
-     "provisional" at a glance, so it can never be mistaken for a verified fact. */
-  .hatch {
-    background-image: repeating-linear-gradient(
-      45deg,
-      rgba(138, 90, 8, 0.14) 0,
-      rgba(138, 90, 8, 0.14) 6px,
-      transparent 6px,
-      transparent 12px
-    );
+  /* Unverified data is marked by a solid amber edge and one labelled strip, not
+     a striped wash. Diagonal stripes across a whole card made the least
+     trustworthy rows the loudest thing on the page and dragged text contrast
+     down with them. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
   .hatch-edge {
     border-left: 4px solid var(--color-mixed);

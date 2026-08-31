@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SITE } from '../data/schema.js'
 import { DATASET_META as META } from '../data/tools.js'
 import { useAuth } from '../lib/auth.jsx'
+import Collapsible from './Collapsible.jsx'
 
 /**
  * Navigation is split into "use the site" and "how it is governed" because a
@@ -134,33 +135,9 @@ function MobileMenu({ open, onClose }) {
     <div ref={panelRef} className="max-h-[75vh] overflow-y-auto border-t border-line bg-paper md:hidden">
       <div className="mx-auto max-w-6xl space-y-5 px-4 py-4">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">Use the site</p>
-          <nav className="mt-1 flex flex-col">
-            {USE_NAV.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                onClick={onClose}
-                className={({ isActive }) =>
-                  `flex min-h-[44px] flex-col justify-center border-b border-line/60 py-2 ${isActive ? 'text-ink' : 'text-ink-soft'}`
-                }
-              >
-                <span className="text-[15px] font-medium">
-                  {item.label}
-                  {item.chip && (
-                    <span className="ml-1.5 rounded border border-line px-1 font-mono text-[10px] font-normal text-ink-faint">
-                      {item.chip}
-                    </span>
-                  )}
-                </span>
-                <span className="text-xs text-ink-faint">{item.hint}</span>
-              </NavLink>
-            ))}
-          </nav>
-        </div>
-
-        <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">How it is governed</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+            How it is governed
+          </p>
           <nav className="mt-1 flex flex-col">
             {RULES_NAV.map((item) => (
               <NavLink
@@ -250,7 +227,7 @@ export default function Layout() {
 
       {/* Permanent, non-dismissible. Anyone who lands on any page learns the
           state of the data before they read a single number. */}
-      <div className="hatch border-b border-mixed/30 bg-mixed-soft">
+      <div className="border-b border-mixed/30 bg-mixed-soft">
         {/* Two lines on a phone instead of four. The warning is mandatory; its
             word count is not. */}
         <div className="mx-auto max-w-6xl px-4 py-2 text-center text-xs leading-relaxed text-mixed">
@@ -314,6 +291,27 @@ export default function Layout() {
             </div>
           </div>
 
+          {/* Phones: the three destinations you actually came for, as a
+              scrollable chip row, so the fixed header earns the space it takes
+              instead of showing nothing but a wordmark. */}
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 no-scrollbar md:hidden">
+            {USE_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `inline-flex min-h-[36px] shrink-0 items-center rounded-full border px-3 py-1.5 text-sm ${
+                    isActive
+                      ? 'border-ink bg-ink font-medium text-white'
+                      : 'border-line bg-white text-ink-soft'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </div>
+
           {/* Desktop only: short row, two groups, no wrapping. */}
           <div className="hidden items-center gap-8 pb-2 md:flex">
             <NavGroup label="Use" items={USE_NAV} />
@@ -347,20 +345,26 @@ export default function Layout() {
               </p>
             </div>
 
-            <FooterColumn
-              title="Use the site"
-              links={[
-                ...USE_NAV.map((i) => ({ to: i.to, label: i.label })),
-                { to: '/tools/chatgpt', label: 'Example tool page' },
-              ]}
-            />
-            <FooterColumn
-              title="How it works"
-              links={[
-                ...RULES_NAV.map((i) => ({ to: i.to, label: i.label })),
-                { to: '/account', label: 'Account' },
-              ]}
-            />
+            <Collapsible
+              title="Site links"
+              className="sm:col-span-2"
+              contentClassName="grid gap-6 sm:grid-cols-2"
+            >
+              <FooterColumn
+                title="Use the site"
+                links={[
+                  ...USE_NAV.map((i) => ({ to: i.to, label: i.label })),
+                  { to: '/tools/chatgpt', label: 'Example tool page' },
+                ]}
+              />
+              <FooterColumn
+                title="How it works"
+                links={[
+                  ...RULES_NAV.map((i) => ({ to: i.to, label: i.label })),
+                  { to: '/account', label: 'Account' },
+                ]}
+              />
+            </Collapsible>
           </div>
 
           <p className="mt-8 border-t border-line pt-4 text-xs text-ink-faint">

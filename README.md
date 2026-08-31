@@ -82,6 +82,9 @@ rather than failing.
    - `supabase/migrations/0002_voting.sql` — `votes`, `campaigns`, the decayed
      scoring functions, and the anti-gaming policies (account age, one vote per
      account, one campaign per submitter per week).
+   - `supabase/migrations/0003_submission_edit_window.sql` — the 24-hour
+     submission edit window, enforced in row level security and frozen against
+     extension.
 2. **Set the browser env vars** (see `.env.example`):
    `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPPORT_EMAIL`. The anon
    key is designed to be public; row level security is what protects data.
@@ -99,6 +102,15 @@ rather than failing.
    function secret. The directory page says so out loud while it is missing.
 5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
    GitHub Actions secrets. Without them the workflow skips cleanly and says so.
+
+### Editing a submission
+
+Submitters get 24 hours to fix a mistake, then changes go through support.
+Editing is time-boxed in the database (the update policy requires
+`now() < editable_until`, and a trigger stops the window being extended), so a
+stale tab cannot write after the deadline. Changing the URL sends a listing back
+to pending, because the existing verification only proves control of the old
+address. "Re-check snippet" is deliberately never time-boxed.
 
 ### Voting parameters
 
