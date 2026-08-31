@@ -1,36 +1,89 @@
 # Phase 2 — directory, verification & ADUO
 
-**Not live.** This file exists so the rules are written before the mechanism is built. The
-`/directory` page mirrors it and says so on arrival.
+## Status
+
+| Piece | State |
+|---|---|
+| Accounts (email/password + Google) | **Live** — Supabase Auth |
+| Directory submission + snippet issuance | **Live** — `/directory/submit` |
+| On-demand ownership verification | **Live** — `verify-snippet` Edge Function |
+| Weekly snippet re-check + tamper warning | **Live** — `scripts/check-directory-snippets.mjs`, Thursdays 07:23 UTC |
+| `/directory` listing page | **Live** — shows confirmed submissions only |
+| Upvoting + anti-gaming | **Not built** (Stage 2) |
+| ADUO | **Not built** (Stage 3). Thresholds below are **UNRATIFIED**. |
+
+Everything live here is inert until a Supabase project is configured. With no env
+vars the app still builds and every route renders; the directory explains what is
+missing rather than pretending.
 
 ## Why a separate axis
 
-A tool can have clean terms and still be mediocre, or be excellent and careless with your data. Phase
-1 answers "is it honest with my data". Phase 2 answers "do real users think it's any good". They stay
-visually and structurally separate — never blended into one score.
+A tool can have clean terms and still be mediocre, or be excellent and careless with your data. Phase 1
+answers "is it honest with my data". Phase 2 answers "do real users vouch for it". They stay visually
+and structurally separate — never blended into one score.
+
+That separation is enforced, not promised:
+
+- the ranking path (`scoring.js`, `filters.js`, `chat.js`) is checked to contain no reference to
+  Supabase or the directory tables;
+- provider rows are scanned for forbidden fields including `upvotes`, `aduo`, `traffic`,
+  `review_sentiment`, `campaign`;
+- the directory tables live in a different database from the provider dataset, which is a static
+  module imported by the app.
 
 ## Submission & ownership verification
 
-1. The site or tool owner submits the product for listing.
-2. They add a small snippet to their site, Search-Console style. It proves control (basic KYC) and
-   gives the review bot a defined route to crawl.
-3. The bot confirms the live site matches what was claimed — a music site is actually a music site.
+1. A signed-in user submits the product and states what it is, in their own words.
+2. A unique token is issued and shown once, as one static meta tag:
+
+   ```html
+   <meta name="wt-directory-verify" content="wt_verify_…">
+   ```
+
+3. "Verify now" fetches the public homepage once and looks for that tag. Match → the listing is
+   confirmed and goes public. No match → it stays pending, with no warning (a draft is not an
+   offence).
 
 **Public crawl only.** The snippet is the only thing added. No account credentials, no API keys, no
-backend access — never requested, never used. It is owner-controlled and owner-removable.
+backend access — never requested, never used. It is owner-controlled and owner-removable. A
+traceability check asserts `src/lib/snippet.js` contains no auth, cookie, key or login handling.
 
-This same snippet can verify a submitter's own privacy claims ("we don't train on your data"), since
-they are already cooperating. It does **not** extend to Phase 1 providers, who have no reason to
-cooperate.
+The submitter's own claim ("a music discovery site") is recorded so the review can confirm the live
+site matches what was claimed at submission.
 
 ## Tamper detection
 
-- The snippet is re-checked **weekly**, not just at submission.
-- If missing or altered, the owner receives a warning stating: what changed (a commit-history-style
-  log with timestamps), that a human will review it, what happens if the review finds tampering, and
-  how to contact support.
-- **No auto-ban on first detection.** Snippet breakage is usually innocent — a redesign, a CMS
-  migration, someone tidying the header.
+- The snippet is re-checked **weekly** (Thursdays 07:23 UTC), not just at submission.
+- Each check appends an immutable row to `snippet_checks`: timestamp, outcome, HTTP status, expected
+  token, found token, note. That table is the commit-history-style log, and it is append-only.
+- Outcomes: `ok`, `altered` (a tag exists but its content differs), `missing`, `unreachable`.
+- If a **previously confirmed** listing stops confirming, the bot flags it (`review_required`) and
+  writes the warning below. A pending listing is never warned about — it simply has not got there yet.
+
+### No auto-ban
+
+The bot sets flags. It does not delist, hide, ban, or penalise anything. This is enforced three ways:
+
+1. the script contains no removal write, and a check scans it for one;
+2. `guard_listing_status` in the database raises unless the change is made by a founder (or by the
+   service role promoting a verified listing);
+3. the weekly workflow opens a GitHub issue as the human review queue, and says in the issue body that
+   nothing has been delisted.
+
+Snippet breakage is usually innocent — a redesign, a CMS migration, a caching layer that strips
+`<head>` tags.
+
+### The warning
+
+Generated by `src/lib/snippet-warning.js` and published in full on `/directory`, because a warning
+users cannot see is a warning that can quietly get worse later. It always contains four parts, and a
+traceability check fails the build if any is dropped:
+
+1. **What changed** — the recent check log, newest first.
+2. **What happens next** — a human reviews; nothing is automatic.
+3. **What removal would mean** — only if the review finds deliberate tampering, and it is a founder
+   decision recorded publicly.
+4. **How to contact support** — a real route and a stated response window.
 
 ## Hard rules (same category as the one rule)
 
@@ -39,11 +92,12 @@ cooperate.
 - Upvote score and ToS transparency rating are shown as separate, clearly labelled signals — never
   one combined score.
 
-## Anti-gaming
+## Anti-gaming (Stage 2, not built)
 
-- Account age requirement plus captcha on voting.
+- Account age minimum plus captcha on voting. Account age comes from `auth.users.created_at`, mirrored
+  into `profiles` — the one timestamp a user cannot forge.
 - Upvotes decay daily, so a one-off bot pile-on cannot have a permanent effect.
-- Submitters may run a promotion or vote campaign once per week, preventing repeated brigading.
+- Submitters may run one promotion or vote campaign per week, preventing repeated brigading.
 
 ## ADUO — balance-of-performance boost
 
@@ -51,7 +105,7 @@ Named after F1-style performance balancing. A listing with few upvotes but stron
 gets extra visibility, so good undiscovered tools are not permanently buried under incumbents who won
 early and snowballed on raw vote count.
 
-### Proposed thresholds — UNRATIFIED
+### Proposed thresholds — UNRATIFIED, NOT BUILT
 
 | Signal | Proposed threshold | Note |
 |---|---|---|
@@ -60,8 +114,13 @@ early and snowballed on raw vote count.
 | ToS / privacy score | ≥ 60/100 with coverage ≥ 70% | Drawn from Phase 1 data. An unverified row cannot qualify |
 | Upvote ceiling | < 50 upvotes | Above this, presumed able to compete on votes alone |
 
-These are **proposed, not decided**. They must be ratified before the first grant — deciding the bar
-once you can see who clears it turns a rule into a favour.
+These are **proposed, not decided**, and the mechanism does not exist yet. When it is built:
+
+- the three signal checks run against these numbers, marked in the UI as UNRATIFIED;
+- **no listing receives a boost automatically** — every grant is a manual founder decision, recorded
+  on the listing;
+- thresholds must be ratified **before** the first grant. Deciding the bar once you can see who clears
+  it turns a rule into a favour.
 
 ### Rules
 
@@ -69,8 +128,8 @@ once you can see who clears it turns a rule into a favour.
   criteria. Never granted because a company is liked or wanted on the site.
 - **Low upvotes alone is never sufficient.** A bad tool also has low upvotes. Traffic, reviews and the
   ToS score are what separate "good, undiscovered" from "correctly ignored".
-- **Deliberate, disclosed exception** to "ranking is never influenced outside votes" — visibly labelled
-  on the listing itself, never invisible.
+- **Deliberate, disclosed exception** to "ranking is never influenced outside votes" — visibly
+  labelled on the listing itself, never invisible.
 - **Founder-granted, criteria-bound.** The founder applies the fixed criteria; this is not a licence to
   override them with personal judgement.
 
@@ -84,8 +143,7 @@ submissions.
 ## Open questions
 
 - How to detect upvote manipulation beyond the measures above (bot rings, coordinated voting).
-- What "verified" actually confirms, and how to say it so users don't read it as a quality or safety
-  endorsement.
-- Cadence and cost of snippet re-checks at scale — trivial at 20 listings, a real recurring job at
-  2,000.
+- What "verified" confirms to a reader: control of a domain, and that the site matches its claim. Not
+  quality, not safety. The wording has to make that impossible to misread.
+- Cost of snippet re-checks at scale — trivial at 20 listings, a real recurring job at 2,000.
 - What "contact support" operationally means. Early on: the founder's inbox. Say so plainly.

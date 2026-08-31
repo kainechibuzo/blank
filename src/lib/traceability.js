@@ -10,6 +10,7 @@ import { TOOLS } from '../data/tools.js'
 import { FILTERS, FILTER_BY_ID } from '../data/schema.js'
 import { applyFilters, rankTools } from './filters.js'
 import { planQuery, answer, explain, USE_CASES, LEXICON_KEYS } from './chat.js'
+import { buildWarning, warningPartsPresent, WARNING_PARTS } from './snippet-warning.js'
 import { scoreTool } from './scoring.js'
 
 /** Keys that must never exist anywhere in the dataset. */
@@ -28,6 +29,18 @@ const FORBIDDEN_KEYS = [
   'paidRank',
   'rankBoost',
   'promotedUntil',
+  // Phase 2/3 axes. If one of these ever appears on a provider row, the two
+  // signals have started to blend, which is the thing the roadmap forbids.
+  'upvotes',
+  'upvote_score',
+  'aduo',
+  'aduo_grant',
+  'aduo_boost',
+  'traffic',
+  'traffic_trend',
+  'review_sentiment',
+  'campaign',
+  'promotion_until',
 ]
 
 function scanForbidden(obj, path = 'tool', hits = []) {
@@ -167,6 +180,30 @@ export function runTraceabilityChecks() {
     'Filter behaviour is measured, not assumed',
     true,
     empty.length ? `Filters with zero matches today: ${empty.join(', ')}` : 'every filter matches at least one row'
+  )
+
+  /* 10 — The tamper warning must keep all four parts. */
+  const sampleWarning = buildWarning({
+    listingName: 'Example',
+    supportEmail: 'support@example.org',
+    checks: [
+      { checked_at: new Date().toISOString(), outcome: 'missing', note: 'No tag found.', httpStatus: 200 },
+    ],
+  })
+  push(
+    'Tamper warning contains all four required parts',
+    warningPartsPresent(sampleWarning) && /support@example\.org/.test(sampleWarning.parts.how_to_contact),
+    `${WARNING_PARTS.length} parts present: ${WARNING_PARTS.map((p) => p.key).join(', ')}`
+  )
+
+  /* 11 — Phase 2/3 signal fields must never appear on a provider row. */
+  const signalHits = TOOLS.flatMap((t) => scanForbidden(t, t.id)).filter((h) =>
+    /upvote|aduo|traffic|review_sentiment|campaign|promotion/.test(h)
+  )
+  push(
+    'No directory, upvote or ADUO fields on a Phase 1 provider row',
+    signalHits.length === 0,
+    signalHits.length ? signalHits.join(', ') : 'the two datasets are structurally separate'
   )
 
   return checks

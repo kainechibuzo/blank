@@ -25,9 +25,25 @@ const SUMMARY_FIELDS = ['trains_on_data', 'human_review', 'deletion']
 
 export default function ToolCard({ tool, rank, matched = [], compact = false }) {
   const s = scoreTool(tool)
+  const verified = tool.verification.status === 'verified'
 
   return (
-    <article className="hatch-edge flex h-full flex-col rounded-lg border border-line bg-paper-raised p-4 transition-shadow hover:shadow-sm">
+    <article
+      className={`flex h-full flex-col rounded-lg border p-4 transition-shadow hover:shadow-sm ${
+        verified
+          ? 'border-line bg-paper-raised'
+          : // Whole-card treatment, not one small pill: hatched wash, amber
+            // border and edge, so a draft row reads as provisional at a glance.
+            'hatch hatch-edge border-mixed/40 bg-paper-raised'
+      }`}
+    >
+      {/* Sits above the score, so the caveat lands before the number does. */}
+      {!verified && (
+        <p className="-mx-4 -mt-4 mb-3 rounded-t-lg hatch border-b border-mixed/30 px-4 py-1.5 text-[11px] font-medium text-mixed">
+          Draft — unverified · placeholder score
+        </p>
+      )}
+
       <div className="flex items-start gap-3">
         <Monogram tool={tool} />
         <div className="min-w-0 flex-1">
@@ -44,7 +60,7 @@ export default function ToolCard({ tool, rank, matched = [], compact = false }) 
           </p>
         </div>
         <div className="w-28 shrink-0">
-          <ScoreDial score={s.score} coverage={s.coverage} />
+          <ScoreDial score={s.score} coverage={s.coverage} provisional={!verified} />
         </div>
       </div>
 
@@ -55,7 +71,9 @@ export default function ToolCard({ tool, rank, matched = [], compact = false }) 
           <div key={key} className="flex items-center justify-between gap-2 text-xs">
             <dt className="text-ink-faint">{FIELDS[key].label}</dt>
             <dd>
-              <Pill tone={tone(key, tool)}>{shortValue(key, tool)}</Pill>
+              <Pill tone={tone(key, tool)} muted={!verified}>
+                {shortValue(key, tool)}
+              </Pill>
             </dd>
           </div>
         ))}
@@ -65,7 +83,7 @@ export default function ToolCard({ tool, rank, matched = [], compact = false }) 
         <div className="mt-3 flex flex-wrap gap-1 border-t border-line pt-3">
           <span className="text-[11px] text-ink-faint">Matched:</span>
           {matched.map((id) => (
-            <Pill key={id} tone="accent">
+            <Pill key={id} tone="accent" muted={!verified}>
               {id.replace(/_/g, ' ')}
             </Pill>
           ))}

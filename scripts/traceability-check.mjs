@@ -6,8 +6,9 @@
  */
 
 import { runTraceabilityChecks } from '../src/lib/traceability.js'
+import { runSourceChecks } from './lib/traceability-source.js'
 
-const checks = runTraceabilityChecks()
+const checks = [...runTraceabilityChecks(), ...(await runSourceChecks())]
 let failed = 0
 
 for (const c of checks) {
