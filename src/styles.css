@@ -31,12 +31,25 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* A comparison page that scrolls sideways on a phone is broken in a way
+       that reads as carelessness, so it is prevented at the root rather than
+       hunted element by element. `clip` rather than `hidden`: it does not
+       create a scroll container, so the sticky header keeps working. */
+    overflow-x: clip;
   }
   body {
     background-color: var(--color-paper);
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: clip;
+    /* Long URLs, hashes and code tokens must never widen a narrow screen. */
+    overflow-wrap: break-word;
+  }
+  /* Anything intrinsically wide scrolls inside its own box, never the page. */
+  pre,
+  table {
+    max-width: 100%;
   }
   :focus-visible {
     outline: 2px solid var(--color-accent);

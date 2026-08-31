@@ -141,23 +141,25 @@ export default function Charter() {
 
       <section className="rounded-lg border border-line bg-white p-4">
         <h2 className="text-sm font-semibold text-ink">Amendments</h2>
-        <table className="mt-3 w-full text-left text-sm">
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[420px] text-left text-sm">
           <tbody className="divide-y divide-line">
-            <tr>
-              <td className="py-2 font-mono text-xs text-ink-faint">v1.0 · 2026-08-31</td>
-              <td className="py-2 text-ink-soft">
-                Charter adopted before any revenue exists. Sponsorship separation, signal separation,
-                chat traceability, and non-purchasable review turnaround.
-              </td>
-            </tr>
-            <tr>
-              <td className="py-2 font-mono text-xs text-ink-faint">pending</td>
-              <td className="py-2 text-ink-faint">
-                ADUO thresholds — to be ratified before the first grant is made, not after.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <tr>
+                <td className="py-2 font-mono text-xs text-ink-faint">v1.0 · 2026-08-31</td>
+                <td className="py-2 text-ink-soft">
+                  Charter adopted before any revenue exists. Sponsorship separation, signal
+                  separation, chat traceability, and non-purchasable review turnaround.
+                </td>
+              </tr>
+              <tr>
+                <td className="py-2 font-mono text-xs text-ink-faint">pending</td>
+                <td className="py-2 text-ink-faint">
+                  ADUO thresholds — to be ratified before the first grant is made, not after.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <p className="text-xs text-ink-faint">
