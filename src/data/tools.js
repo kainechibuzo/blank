@@ -42,7 +42,7 @@ const unverified = () => ({
  * @param {object} o.fields        the eight tracked fields
  * @param {Array}  o.policy_sources  pages a reviewer must read
  */
-function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fields, policy_sources }) {
+function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fields, policy_sources, verification }) {
   return {
     id,
     name,
@@ -55,7 +55,9 @@ function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fi
     monogram: monogram || name.slice(0, 2).toUpperCase(),
     accent: accent || '#0b6b63',
     fields,
-    verification: unverified(),
+    // Default is always unverified. A row only becomes `verified` when a reviewer
+    // passes an explicit status and date. See the file header.
+    verification: verification ?? unverified(),
     policy_sources: policy_sources.map((s) => ({
       label: s.label,
       url: s.url,
@@ -69,6 +71,7 @@ function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fi
 }
 
 export const TOOLS = [
+
   tool({
     id: 'chatgpt',
     name: 'ChatGPT',
@@ -78,45 +81,52 @@ export const TOOLS = [
     url: 'https://chatgpt.com',
     monogram: 'CG',
     accent: '#0d8a6a',
-    blurb: 'General-purpose chat assistant, with free, Plus, Team and Enterprise tiers plus an API.',
+    blurb: 'General-purpose chat assistant with free and paid individual tiers, business plans and an API.',
     fields: {
       trains_on_data: {
         value: 'opt-out-available',
-        note: 'To verify: whether the opt-out covers uploads and voice, or only chat text; and whether the default differs on the free tier.',
+        note: 'OpenAI states it may use your content to train its models, and offers an opt-out in the privacy portal. Opting out stops new conversations being used; feedback you submit afterwards can still be used, and Temporary Chats are excluded either way.',
       },
       human_review: {
         value: 'conditional',
-        note: 'To verify: the stated conditions for review, and whether any tier removes human review entirely.',
+        note: 'The policy says content submitted or exchanged on the platform may be monitored to prevent fraud, abuse and misuse. It does not spell out human review of consumer chats; for business tiers OpenAI states people only access conversations to resolve incidents, restore them at your request, or where the law requires.',
       },
       retention: {
         value: 'stated',
-        note: 'To verify: the stated window, whether deleted chats leave the retention clock early, and how long abuse-holds last.',
+        note: 'Deleted content is removed from systems within 30 days, and Temporary Chats are deleted automatically within 30 days. Longer retention is possible for banned accounts, legal obligations and financial records. Ordinary chats are kept until you delete them.',
       },
       deletion: {
         value: 'self-serve',
-        note: 'To verify: whether deletion is immediate or queued, and what survives it (e.g. de-identified logs).',
+        note: 'Individual conversations, all conversations, saved memories and the whole account can be deleted in-product, and history can be exported. Removal from systems takes up to 30 days.',
       },
       residency: {
         hq_jurisdiction: 'US',
-        eu_option: true,
-        regions: ['US', 'EU'],
-        note: 'To verify: which tiers actually get EU data residency, and whether it is automatic or a sales conversation.',
+        eu_option: false,
+        regions: ['US'],
+        note: 'Personal data is processed and stored in the United States and in other countries where OpenAI, its affiliates, partners and vendors operate. A separate EEA, UK and Swiss policy version exists. EU data residency for business tiers was not verified in this pass.',
       },
       free_tier: {
         value: 'differs',
-        note: 'To verify: the concrete differences between free and paid terms, and whether they are stated in one document or several.',
+        note: 'The policy singles out Free and Go tiers for advertising: those tiers see ads, and ad personalisation and measurement use your data. Paid tiers are not described this way. Training controls are available on every tier.',
       },
       enterprise_api: {
         value: 'separate-no-training',
-        note: 'To verify: whether business/API data is excluded from training by default or only by contract.',
+        note: 'For ChatGPT Business, Enterprise, Edu and the API, OpenAI states it does not train on inputs or outputs by default; organisations must explicitly opt in to share data. Those offerings are governed by customer agreements and a data processing addendum rather than the consumer policy.',
       },
     },
+    verification: {
+      status: 'verified',
+      last_verified: '2026-08-31',
+      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
+      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+    },
     policy_sources: [
-      { label: 'Privacy policy', url: 'https://openai.com/policies/privacy-policy/' },
-      { label: 'Terms of use', url: 'https://openai.com/policies/terms-of-use/' },
+      { label: 'US privacy policy', url: 'https://openai.com/policies/privacy-policy/' },
+      { label: 'Help: how your data is used to improve model performance', url: 'https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance' },
       { label: 'Enterprise privacy', url: 'https://openai.com/enterprise-privacy/' },
     ],
   }),
+
 
   tool({
     id: 'claude',
@@ -127,94 +137,108 @@ export const TOOLS = [
     url: 'https://claude.ai',
     monogram: 'CL',
     accent: '#b1603d',
-    blurb: 'Chat assistant with a large context window, consumer tiers plus Team, Enterprise and an API.',
+    blurb: 'Chat assistant with a large context window, consumer tiers plus commercial plans and an API.',
     fields: {
       trains_on_data: {
         value: 'opt-out-available',
-        note: 'To verify: the current default and where the control lives; whether the API is excluded regardless.',
+        note: 'Anthropic states it may use inputs and outputs to train models unless you opt out in account settings. Safety-flagged conversations and feedback you submit explicitly can be used even when you have opted out; incognito chats are not used.',
       },
       human_review: {
         value: 'conditional',
-        note: 'To verify: retention of reviewed conversations (trust & safety holds) versus ordinary chats.',
+        note: 'Conversations flagged by trust and safety systems are retained and analysed to improve policy enforcement. The policy does not state whether that review is done by people, by automated systems, or both.',
       },
       retention: {
-        value: 'short',
-        note: 'To verify: the stated window for consumer chats and how long flagged content is kept.',
+        value: 'stated',
+        note: 'Deleted conversations leave your history immediately and are deleted from back-end storage within 30 days. If model improvement is enabled, de-identified data may sit in training pipelines for up to 5 years; policy-violation cases are kept up to 2 years with classification scores up to 7 years; feedback data 5 years.',
       },
       deletion: {
         value: 'self-serve',
-        note: 'To verify: whether deleting a conversation removes it from backups within the stated window.',
+        note: 'Individual conversations can be deleted in-product and disappear from history immediately, with back-end deletion within 30 days. Account deletion and data export are also available.',
       },
       residency: {
         hq_jurisdiction: 'US',
-        eu_option: true,
-        regions: ['US', 'EU'],
-        note: 'To verify: whether EU processing applies to consumer users or only commercial agreements.',
+        eu_option: false,
+        regions: ['US'],
+        note: 'Data is transferred to servers in the United States and to other countries outside the EEA and UK, relying on adequacy decisions or standard contractual clauses. EEA commercial customers contract with an Irish Anthropic entity, which is an entity question rather than a data-residency commitment.',
       },
       free_tier: {
-        value: 'same-policy',
-        note: 'To verify: this is the claim most worth checking — free-tier parity is rare and changes often.',
+        value: 'unknown',
+        note: 'The privacy policy covers Free, Pro and Max in the same language and states no difference between them. The absence of a stated difference is not proof of identical treatment, so this stays unknown.',
       },
       enterprise_api: {
         value: 'separate-no-training',
-        note: 'To verify: whether commercial terms exclude training by default.',
+        note: 'The commercial terms state that Anthropic may not train models on customer content from the API and other commercial services. The consumer privacy policy does not apply to those offerings.',
       },
+    },
+    verification: {
+      status: 'verified',
+      last_verified: '2026-08-31',
+      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
+      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },
     policy_sources: [
       { label: 'Privacy policy', url: 'https://www.anthropic.com/legal/privacy' },
-      { label: 'Consumer terms', url: 'https://www.anthropic.com/legal/consumer-terms' },
-      { label: 'Commercial terms', url: 'https://www.anthropic.com/legal/commercial-terms' },
+      { label: 'Privacy centre: how long data is stored', url: 'https://privacy.anthropic.com/en/articles/10023548-how-long-do-you-store-personal-data' },
+      { label: 'Privacy centre: personal data in model training', url: 'https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training' },
+      { label: 'Commercial terms of service', url: 'https://www.anthropic.com/legal/commercial-terms' },
     ],
   }),
+
 
   tool({
     id: 'gemini',
     name: 'Gemini',
     vendor: 'Google',
     category: 'assistant',
-    hq: 'United States',
+    hq: 'United States (Google LLC; Google Ireland Ltd in the EEA and Switzerland)',
     url: 'https://gemini.google.com',
     monogram: 'GM',
     accent: '#3a6fd8',
-    blurb: 'Assistant embedded across Google products, with consumer tiers, Workspace plans and an API on Vertex AI.',
+    blurb: 'Assistant embedded across Google products, with free and paid consumer plans, Workspace and cloud API access.',
     fields: {
       trains_on_data: {
         value: 'opt-out-available',
-        note: 'To verify: whether the "keep activity" control is on by default, and how it interacts with human review.',
+        note: 'With Keep Activity on, which is the default, Google uses your activity to develop and improve services including training generative AI models. Turning the setting off, or using temporary chats, stops future chats being used for training unless you choose to send feedback.',
       },
       human_review: {
-        value: 'conditional',
-        note: 'To verify: how long reviewed data is retained, and whether opting out of training also limits review.',
+        value: 'yes',
+        note: 'Google states that human reviewers, including trained reviewers from its service providers, review some of the data, and that this continues even when Keep Activity is off. Reviewed data is disconnected from your account and kept for up to three years.',
       },
       retention: {
         value: 'stated',
-        note: 'To verify: the stated window for activity, and whether it differs for Workspace accounts.',
+        note: 'Activity auto-deletes after 18 months by default, with 3, 18, 36 months or no auto-delete as options. Temporary chats and chats with Keep Activity off are retained for 72 hours. Anything reviewed by human reviewers is retained for up to three years.',
       },
       deletion: {
         value: 'self-serve',
-        note: 'To verify: what "delete" does across connected Google services, and whether copies persist.',
+        note: 'Chats can be deleted manually at any time in Gemini Apps Activity, auto-delete can be configured, and data can be exported through Takeout. Deleting does not remove chats already sent to reviewers, nor copies held by other Google services.',
       },
       residency: {
         hq_jurisdiction: 'US',
         eu_option: true,
         regions: ['US', 'EU'],
-        note: 'To verify: data region commitments for Workspace versus consumer accounts.',
+        note: 'Gemini Apps are provided by Google Ireland Limited in the EEA and Switzerland, and by Google LLC everywhere else. Which entity you contract with depends on where you are.',
       },
       free_tier: {
-        value: 'differs',
-        note: 'To verify: whether consumer and Workspace terms are separate documents with different data-use rules.',
+        value: 'unknown',
+        note: 'The Gemini Apps privacy notice does not distinguish free from paid consumer plans. Subscription information is collected for paid plans, but no difference in data-use terms is stated.',
       },
       enterprise_api: {
-        value: 'separate-no-training',
-        note: 'To verify: whether cloud/API data is excluded from training and how that is contracted.',
+        value: 'separate',
+        note: 'Google states that work and school accounts may be subject to different data-handling terms under a separate Workspace privacy hub, and the cloud API is governed separately. Neither was read in this pass, so no training commitment is asserted here.',
       },
     },
+    verification: {
+      status: 'verified',
+      last_verified: '2026-08-31',
+      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
+      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+    },
     policy_sources: [
-      { label: 'Privacy policy', url: 'https://policies.google.com/privacy' },
-      { label: 'Generative AI terms', url: 'https://policies.google.com/terms/generative-ai' },
-      { label: 'Cloud data processing addendum', url: 'https://cloud.google.com/terms/data-processing-addendum' },
+      { label: 'Gemini Apps Privacy Hub and privacy notice', url: 'https://support.google.com/gemini/answer/13594961' },
+      { label: 'Google Privacy Policy (the notice supplements this)', url: 'https://policies.google.com/privacy' },
     ],
   }),
+
 
   tool({
     id: 'perplexity',
@@ -225,42 +249,47 @@ export const TOOLS = [
     url: 'https://www.perplexity.ai',
     monogram: 'PX',
     accent: '#1f7a8c',
-    blurb: 'Answer engine that cites web sources, with free and paid tiers and an enterprise offering.',
+    blurb: 'Answer engine that cites web sources, with free and paid tiers, a browser, and enterprise and API offerings.',
     fields: {
       trains_on_data: {
-        value: 'unknown',
-        note: 'To verify: the biggest open question here, and the one users ask about most. Read the current policy end to end.',
+        value: 'yes',
+        note: 'The notice lists improving and creating services, including its AI models, among the uses of user content, and documents no general opt-out. Incognito stops activity being saved across sessions but is not stated to stop training. Email-assistant content is explicitly excluded from training.',
       },
       human_review: {
         value: 'unknown',
-        note: 'To verify: whether review is limited to safety cases.',
+        note: 'The notice does not address whether conversations are read by people. This is the biggest gap on the row and the first thing to re-check.',
       },
       retention: {
         value: 'unknown',
-        note: 'To verify: whether search history is retained indefinitely for personalisation.',
+        note: 'The notice commits to keeping personal data only as long as necessary but states no periods anywhere. With no number to record, this stays unknown rather than being guessed.',
       },
       deletion: {
         value: 'request',
-        note: 'To verify: whether account deletion removes query history automatically.',
+        note: 'Deletion is described as a right exercised by contacting Perplexity, subject to identity verification and legal carve-outs. In-product deletion of individual threads is not documented in the notice.',
       },
       residency: {
         hq_jurisdiction: 'US',
         eu_option: false,
         regions: ['US'],
-        note: 'To verify: whether any EU residency commitment exists for enterprise.',
+        note: 'Data moves between affiliates worldwide and may be processed in countries with less stringent laws. The company is certified under the EU-US Data Privacy Framework and will supply standard contractual clauses on request.',
       },
       free_tier: {
         value: 'unknown',
-        note: 'To verify: whether data-use terms differ between free and Pro.',
+        note: 'The notice does not distinguish free from paid tiers.',
       },
       enterprise_api: {
         value: 'separate',
-        note: 'To verify: what the enterprise terms actually promise about training and retention.',
+        note: 'The notice explicitly does not apply to the Enterprise and API offerings, where Perplexity acts as a service provider or processor. Those terms were not read in this pass.',
       },
     },
+    verification: {
+      status: 'verified',
+      last_verified: '2026-08-31',
+      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
+      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+    },
     policy_sources: [
-      { label: 'Privacy policy', url: 'https://www.perplexity.ai/hub/legal/privacy-policy' },
-      { label: 'Terms of service', url: 'https://www.perplexity.ai/hub/legal/terms-of-service' },
+      { label: 'Privacy notice', url: 'https://www.perplexity.ai/hub/legal/privacy-notice' },
     ],
   }),
 
@@ -408,6 +437,7 @@ export const TOOLS = [
     ],
   }),
 
+
   tool({
     id: 'le-chat',
     name: 'Le Chat',
@@ -417,42 +447,48 @@ export const TOOLS = [
     url: 'https://chat.mistral.ai',
     monogram: 'LC',
     accent: '#d9741f',
-    blurb: 'Assistant from an EU-headquartered model provider, with free, pro and enterprise tiers plus an API.',
+    blurb: 'Assistant from an EU-established model provider, with free and paid consumer tiers, commercial terms and an API.',
     fields: {
       trains_on_data: {
-        value: 'unknown',
-        note: 'To verify: an EU provider is not automatically a privacy-friendlier one. Read the policy rather than assuming jurisdiction implies anything.',
+        value: 'opt-out-available',
+        note: 'Mistral lists model training as a purpose covering your input and output, subject to an opt-out, and provides an in-account control to object to training use directly.',
       },
       human_review: {
         value: 'conditional',
-        note: 'To verify: an EU provider is not automatically stricter — confirm the conditions rather than assuming jurisdiction implies anything.',
+        note: 'Input and output are processed for moderation and abuse monitoring, and authorised team members may access personal data to do their jobs. The policy does not describe routine review of conversations.',
       },
       retention: {
-        value: 'short',
-        note: 'To verify: the stated window, and whether it differs for free and paid tiers.',
+        value: 'stated',
+        note: 'Input and output are kept until you delete the conversation or the account. API input and output are kept for 30 rolling days for abuse monitoring unless zero data retention is enabled. Separate legal periods apply, including five years for identity data after termination and ten for invoices.',
       },
       deletion: {
-        value: 'request',
-        note: 'To verify: whether conversation deletion is self-serve.',
+        value: 'self-serve',
+        note: 'In-account controls allow deleting the account and conversations, exporting data, and objecting to training use. Mistral notes that requests touching model training have technical limits.',
       },
       residency: {
         hq_jurisdiction: 'EU',
         eu_option: true,
         regions: ['EU'],
-        note: 'To verify: where inference and storage physically happen.',
+        note: 'Mistral AI is a French company based in Paris. It prioritises providers inside the EU, permits non-EU ones in exceptional cases, and attaches standard contractual clauses to those contracts.',
       },
       free_tier: {
         value: 'unknown',
-        note: 'To verify: whether free and paid terms differ.',
+        note: 'The policy does not distinguish free from paid consumer tiers.',
       },
       enterprise_api: {
-        value: 'separate-no-training',
-        note: 'To verify: whether the commercial terms exclude training by default.',
+        value: 'separate',
+        note: 'The policy does not apply when the products are used in a business context, where the customer is the controller and Mistral is the processor. Separate commercial terms and a data processing addendum exist but were not read in this pass.',
       },
     },
+    verification: {
+      status: 'verified',
+      last_verified: '2026-08-31',
+      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
+      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+    },
     policy_sources: [
-      { label: 'Privacy policy', url: 'https://mistral.ai/privacy/' },
-      { label: 'Terms of service', url: 'https://mistral.ai/terms/' },
+      { label: 'Privacy policy', url: 'https://legal.mistral.ai/terms/privacy-policy' },
+      { label: 'Legal document index', url: 'https://legal.mistral.ai/terms' },
     ],
   }),
 
@@ -933,5 +969,5 @@ export const DATASET_META = {
   tool_count: TOOLS.length,
   verified_count: TOOLS.filter((t) => t.verification.status === 'verified').length,
   scope: '20 major AI products. Deliberately not "every AI tool ever".',
-  last_updated: null,
+  last_updated: '2026-08-31',
 }

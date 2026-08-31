@@ -117,8 +117,8 @@ Not today, and adding it now would mean paying for an idle service.
 | Need | Where it runs now | Cost |
 |---|---|---|
 | The site itself | Vercel (static) | $0 |
-| Weekly policy hash check | GitHub Actions (`ops/workflows/policy-hash-check.yml`) | $0 |
-| Hard-rule checks in CI | GitHub Actions (`ops/workflows/ci.yml`) | $0 |
+| Weekly policy hash check | GitHub Actions (`.github/workflows/policy-hash-check.yml`) | $0 |
+| Hard-rule checks in CI | GitHub Actions (`.github/workflows/ci.yml`) | $0 |
 | Policy change alerts | Not built — browser-local watchlist only | $0 |
 
 Render earns its place at the point the product grows a backend — the paid alerts tier (email +
@@ -141,10 +141,7 @@ look after.
 
 ### CI
 
-Two workflows ship in `ops/workflows/` — **move them to `.github/workflows/` to activate them.**
-They are parked outside that directory because the tooling pushing this branch is not permitted to
-create workflow files; GitHub rejects such pushes. Once moved (or once wider GitHub permissions are
-granted), they run as-is:
+Both workflows live in `.github/workflows/` and are active:
 
 - `ci.yml` — runs `npm run check` (traceability assertions + route render smoke test) on every push
   and pull request.
@@ -152,9 +149,14 @@ granted), they run as-is:
   policy page, commits the updated baseline, and **opens a GitHub issue listing exactly which tools
   need a human re-read**. That issue is the verification work queue.
 
-```bash
-mkdir -p .github/workflows && mv ops/workflows/*.yml .github/workflows/
-```
+- `ci.yml` — runs `npm run check` (traceability assertions + route render smoke test) on every push
+  and pull request.
+- `policy-hash-check.yml` — weekly cron (Mondays 06:17 UTC) and manual dispatch. It re-hashes every
+  policy page, commits the updated baseline, and **opens a GitHub issue listing exactly which tools
+  need a human re-read**. That issue is the verification work queue.
+
+Note for future agents: GitHub rejects workflow files pushed by an app without the `workflows`
+permission, which is why these originally landed in `ops/workflows/` and were moved by hand.
 
 ---
 

@@ -42,6 +42,7 @@ export default function ToolPage() {
 
   const s = scoreTool(tool)
   const status = VERIFICATION_STATUSES[tool.verification.status]
+  const verified = tool.verification.status === 'verified'
 
   const onWatch = () => {
     toggleWatch(tool.id)
@@ -84,7 +85,7 @@ export default function ToolPage() {
           </div>
         </div>
         <div className="w-40 rounded-lg border border-line bg-white p-3">
-          <ScoreDial score={s.score} coverage={s.coverage} size="lg" />
+          <ScoreDial score={s.score} coverage={s.coverage} size="lg" provisional={!verified} />
         </div>
       </header>
 
@@ -114,9 +115,13 @@ export default function ToolPage() {
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     {isResidency ? (
-                      <Pill tone={summary.tone}>{summary.short}</Pill>
+                      <Pill tone={summary.tone} muted={!verified}>
+                        {summary.short}
+                      </Pill>
                     ) : (
-                      <Pill tone={option?.tone ?? 'unknown'}>{option?.label ?? 'Unknown'}</Pill>
+                      <Pill tone={option?.tone ?? 'unknown'} muted={!verified}>
+                        {option?.label ?? 'Unknown'}
+                      </Pill>
                     )}
                     <span className="font-mono text-[11px] text-ink-faint">
                       {breakdown.points}/{breakdown.max} pts
