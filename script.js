@@ -1,1 +1,0 @@
-console.log("Football News Official loaded");

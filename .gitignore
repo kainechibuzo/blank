@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.vite
+npm-debug.log*
+.env
+.env.*
+!.env.example
+
+# Local-only output from scripts/check-policy-hashes.mjs
+data/policy-hashes.local.json
