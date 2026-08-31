@@ -3,6 +3,19 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import { buildWarning } from '../lib/snippet-warning.js'
+import {
+  VOTE_MIN_ACCOUNT_AGE_DAYS,
+  VOTE_DECAY_PER_DAY,
+  CAPTCHA_SITEKEY,
+  captchaEnabled,
+  fetchVoteSummary,
+  fetchMyVotes,
+  fetchCampaignsThisWeek,
+  castVote,
+  startCampaign,
+  formatUpvoteScore,
+} from '../lib/votes.js'
+import Captcha from '../lib/captcha.jsx'
 import { CATEGORIES } from '../data/schema.js'
 import { TOOL_BY_ID } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
@@ -28,7 +41,115 @@ const SAMPLE_WARNING = buildWarning({
   ],
 })
 
-function ListingCard({ listing }) {
+/** Explanation only. The rule itself is enforced server-side in cast-vote. */
+function voteBlockReason({ user, accountAgeDays }) {
+  if (!user) return 'Sign in to vote.'
+  if (accountAgeDays !== null && accountAgeDays < VOTE_MIN_ACCOUNT_AGE_DAYS) {
+    return `Your account is ${accountAgeDays} day${accountAgeDays === 1 ? '' : 's'} old. Voting opens at ${VOTE_MIN_ACCOUNT_AGE_DAYS} days.`
+  }
+  return null
+}
+
+function VoteButton({ active, disabled, onClick, children, tone = 'neutral' }) {
+  const activeClass =
+    tone === 'good'
+      ? 'border-good bg-good-soft text-good'
+      : 'border-bad bg-bad-soft text-bad'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex min-h-[36px] items-center rounded-md border px-3 py-1.5 text-xs font-medium disabled:cursor-not-allowed disabled:opacity-50 ${
+        active ? activeClass : 'border-line bg-white text-ink-soft hover:border-ink-faint'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function VoteBlock({ listing, summary, myVote, campaign, blockedReason, busy, captchaOpen, onVote, onVerify, onCancel }) {
+  const s = summary ?? { upvoteScore: 0, up: 0, down: 0, total: 0 }
+
+  return (
+    <div className="mt-3 rounded-md border border-accent/25 bg-accent-soft/40 p-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-accent-ink">
+          Community signal
+        </span>
+        <span className="text-[11px] text-ink-faint">
+          {s.up} up · {s.down} down
+        </span>
+      </div>
+
+      <p className="mt-0.5 text-2xl font-semibold tabular-nums text-accent-ink">
+        {formatUpvoteScore(s.upvoteScore)}
+      </p>
+      <p className="text-[11px] leading-snug text-ink-faint">
+        Old votes fade {Math.round(VOTE_DECAY_PER_DAY * 100)}% a day. A separate signal — never added to
+        the transparency score.
+      </p>
+
+      {campaign && (
+        <p className="mt-2 rounded border border-mixed/40 bg-mixed-soft px-2 py-1 text-[11px] text-mixed">
+          Being promoted this week
+          {campaign.note ? `: “${campaign.note}”` : ''}
+        </p>
+      )}
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <VoteButton
+          tone="good"
+          active={myVote === 1}
+          disabled={Boolean(blockedReason) || busy}
+          onClick={() => onVote(1)}
+        >
+          Vouch for it
+        </VoteButton>
+        <VoteButton
+          tone="bad"
+          active={myVote === -1}
+          disabled={Boolean(blockedReason) || busy}
+          onClick={() => onVote(-1)}
+        >
+          Disapprove
+        </VoteButton>
+        {busy && <span className="text-[11px] text-ink-faint">Saving…</span>}
+        {myVote && !busy && (
+          <span className="text-[11px] text-ink-faint">
+            Your vote is recorded. You can change it or pick the other side.
+          </span>
+        )}
+      </div>
+
+      {blockedReason && <p className="mt-2 text-[11px] text-ink-faint">{blockedReason}</p>}
+
+      {captchaOpen && (
+        <div className="mt-3 rounded border border-line bg-white p-3">
+          <p className="mb-2 text-[11px] text-ink-soft">
+            One check before your vote counts. It stops scripted voting, not you.
+          </p>
+          <Captcha
+            sitekey={CAPTCHA_SITEKEY}
+            onVerify={onVerify}
+            onExpire={() => onCancel()}
+            onError={onCancel}
+          />
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-2 text-[11px] text-ink-faint underline underline-offset-2"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ListingCard({ listing, summary, myVote, campaign, blockedReason, busy, captchaOpen, onVote, onVerify, onCancel }) {
   const linked = listing.linked_tool_id ? TOOL_BY_ID[listing.linked_tool_id] : null
   return (
     <article className="flex h-full flex-col rounded-lg border border-line bg-white p-4">
@@ -52,10 +173,20 @@ function ListingCard({ listing }) {
         <p className="mt-2 text-xs text-ink-faint">Claimed at submission: “{listing.claimed_description}”</p>
       )}
 
+      <VoteBlock
+        listing={listing}
+        summary={summary}
+        myVote={myVote}
+        campaign={campaign}
+        blockedReason={blockedReason}
+        busy={busy}
+        captchaOpen={captchaOpen}
+        onVote={onVote}
+        onVerify={onVerify}
+        onCancel={onCancel}
+      />
+
       <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
-        <Pill tone="unknown" title="Voting is Stage 2. Nothing here is ranked by votes yet.">
-          no votes yet
-        </Pill>
         {listing.verified_at && (
           <span className="text-[11px] text-ink-faint">
             ownership confirmed {new Date(listing.verified_at).toISOString().slice(0, 10)}
@@ -72,17 +203,25 @@ function ListingCard({ listing }) {
 }
 
 export default function Directory() {
-  const { user, configured } = useAuth()
+  const { user, configured, accountAgeDays } = useAuth()
   const [listings, setListings] = useState([])
   const [mine, setMine] = useState([])
+  const [summary, setSummary] = useState({})
+  const [myVotes, setMyVotes] = useState({})
+  const [campaigns, setCampaigns] = useState({})
   const [loading, setLoading] = useState(configured)
   const [error, setError] = useState(null)
+
+  const [busyId, setBusyId] = useState(null)
+  const [captchaFor, setCaptchaFor] = useState(null)
+  const [voteError, setVoteError] = useState(null)
+  const [campaignNote, setCampaignNote] = useState('')
 
   useEffect(() => {
     if (!supabase) return
     supabase
       .from('listings')
-      .select('id, name, url, category, blurb, claimed_description, snippet_state, verified_at, linked_tool_id')
+      .select('id, name, url, category, blurb, claimed_description, snippet_state, verified_at, linked_tool_id, owner_id')
       .eq('status', 'listed')
       .order('verified_at', { ascending: false })
       .then(({ data, error: qError }) => {
@@ -91,6 +230,17 @@ export default function Directory() {
         else setListings(data ?? [])
       })
   }, [])
+
+  useEffect(() => {
+    if (!supabase) return
+    Promise.all([fetchVoteSummary(), fetchMyVotes(user?.id), fetchCampaignsThisWeek()]).then(
+      ([s, v, c]) => {
+        setSummary(s)
+        setMyVotes(v)
+        setCampaigns(c)
+      }
+    )
+  }, [user?.id])
 
   useEffect(() => {
     if (!supabase || !user) {
@@ -105,18 +255,56 @@ export default function Directory() {
       .then(({ data }) => setMine(data ?? []))
   }, [user])
 
+  const refreshVotes = async () => {
+    const [s, v] = await Promise.all([fetchVoteSummary(), fetchMyVotes(user?.id)])
+    setSummary(s)
+    setMyVotes(v)
+  }
+
+  const submitVote = async (listingId, value, token) => {
+    setBusyId(listingId)
+    setVoteError(null)
+    const { data, error: castError } = await castVote({ listingId, value, captchaToken: token })
+    setBusyId(null)
+    setCaptchaFor(null)
+
+    if (castError) {
+      setVoteError(castError)
+      return
+    }
+    setSummary((s) => ({ ...s, [listingId]: { upvoteScore: data.upvoteScore, ...data.totals } }))
+    setMyVotes((v) => ({ ...v, [listingId]: value }))
+  }
+
+  const requestVote = (listingId, value) => {
+    if (captchaEnabled) setCaptchaFor({ listingId, value })
+    else submitVote(listingId, value, undefined)
+  }
+
+  const promote = async (listingId) => {
+    const { error: campaignError } = await startCampaign({ listingId, note: campaignNote })
+    setCampaignNote('')
+    if (campaignError) {
+      setVoteError(campaignError)
+      return
+    }
+    setCampaigns(await fetchCampaignsThisWeek())
+  }
+
+  const blockedReason = voteBlockReason({ user, accountAgeDays })
+
   return (
     <div className="space-y-10">
       <header className="max-w-3xl">
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="accent">Phase 2 — live</Pill>
-          <Pill tone="neutral">Ownership verified · no voting yet</Pill>
+          <Pill tone="neutral">Ownership verified · voting live</Pill>
         </div>
         <h1 className="mt-3 text-3xl font-semibold text-ink">Directory</h1>
         <p className="mt-2 text-ink-soft">
-          Community-submitted tools, each proven to be controlled by the person who submitted it. This is a separate
-          axis from the transparency database: Phase 1 answers “is it honest with my data”, this answers “real users
-          vouch for it”. They are never blended into one score.
+          Community-submitted tools, each proven to be controlled by the person who submitted it. This is a
+          separate axis from the transparency database: Phase 1 answers “is it honest with my data”, this
+          answers “do real users vouch for it”.
         </p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link to="/directory/submit" className="rounded-md bg-ink px-4 py-2 text-sm font-medium text-white">
@@ -128,17 +316,35 @@ export default function Directory() {
         </div>
       </header>
 
+      <Callout variant="rule" title="Two signals, never one number">
+        The transparency score comes from reading a tool’s own policies. The community signal comes from
+        accounts that vouched for it. They are computed separately, stored separately, and shown
+        separately. A tool can score 92 on transparency and have no upvotes, or be widely liked and
+        careless with data. Nothing on this site adds them together.
+      </Callout>
+
       {!configured && (
         <Callout variant="warn" title="The directory needs a Supabase project">
           Set <code className="font-mono text-xs">VITE_SUPABASE_URL</code> and{' '}
           <code className="font-mono text-xs">VITE_SUPABASE_ANON_KEY</code>, run{' '}
-          <code className="font-mono text-xs">supabase/migrations/0001_phase2_directory.sql</code>, and deploy the{' '}
-          <code className="font-mono text-xs">verify-snippet</code> function. Until then this page shows no listings —
+          <code className="font-mono text-xs">supabase/migrations/0001_phase2_directory.sql</code> and{' '}
+          <code className="font-mono text-xs">0002_voting.sql</code>, and deploy{' '}
+          <code className="font-mono text-xs">verify-snippet</code> and{' '}
+          <code className="font-mono text-xs">cast-vote</code>. Until then this page shows no listings —
           which is the honest state, not an error.
         </Callout>
       )}
 
+      {!captchaEnabled && configured && (
+        <Callout variant="warn" title="Captcha is not configured">
+          Voting works, but nothing is stopping a script from voting yet. Set{' '}
+          <code className="font-mono text-xs">VITE_HCAPTCHA_SITEKEY</code> and{' '}
+          <code className="font-mono text-xs">HCAPTCHA_SECRET</code> as a function secret to close that.
+        </Callout>
+      )}
+
       {error && <Callout variant="danger">Could not load listings: {error}</Callout>}
+      {voteError && <Callout variant="danger">{voteError}</Callout>}
 
       {configured && (
         <section>
@@ -152,7 +358,19 @@ export default function Directory() {
           ) : (
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {listings.map((l) => (
-                <ListingCard key={l.id} listing={l} />
+                <ListingCard
+                  key={l.id}
+                  listing={l}
+                  summary={summary[l.id]}
+                  myVote={myVotes[l.id]}
+                  campaign={campaigns[l.id]}
+                  blockedReason={blockedReason}
+                  busy={busyId === l.id}
+                  captchaOpen={captchaFor?.listingId === l.id}
+                  onVote={(value) => requestVote(l.id, value)}
+                  onVerify={(token) => submitVote(l.id, captchaFor.value, token)}
+                  onCancel={() => setCaptchaFor(null)}
+                />
               ))}
             </div>
           )}
@@ -162,7 +380,7 @@ export default function Directory() {
       {mine.length > 0 && (
         <section>
           <h2 className="text-xl font-semibold text-ink">Your submissions</h2>
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-3 space-y-3">
             {mine.map((l) => (
               <li key={l.id} className="rounded-lg border border-line bg-white p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -173,6 +391,34 @@ export default function Directory() {
                     {l.review_required && <Pill tone="bad">human review pending</Pill>}
                   </span>
                 </div>
+
+                {l.status === 'listed' && !campaigns[l.id] && (
+                  <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-line pt-3">
+                    <label className="min-w-[12rem] flex-1 text-[11px] text-ink-faint">
+                      Promote this week (one campaign per submitter per week)
+                      <input
+                        value={campaignNote}
+                        onChange={(e) => setCampaignNote(e.target.value)}
+                        placeholder="Why people should look at it"
+                        className="mt-1 w-full rounded-md border border-line px-2 py-1.5 text-xs text-ink"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => promote(l.id)}
+                      className="inline-flex min-h-[36px] items-center rounded-md border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink hover:border-ink-faint"
+                    >
+                      Start campaign
+                    </button>
+                  </div>
+                )}
+                {campaigns[l.id] && (
+                  <p className="mt-3 border-t border-line pt-3 text-[11px] text-ink-faint">
+                    You are promoting this listing this week. Campaigns are shown publicly on the card, and
+                    you get one per week.
+                  </p>
+                )}
+
                 {l.review_required && (
                   <div className="mt-2 rounded border-l-2 border-mixed/50 bg-mixed-soft/60 px-3 py-2">
                     <p className="text-xs font-medium text-mixed">
@@ -210,8 +456,9 @@ export default function Directory() {
       <section>
         <h2 className="text-xl font-semibold text-ink">The warning an owner receives</h2>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft">
-          Published in full, because a warning people cannot see is a warning that can quietly get worse later. This is
-          the exact text the weekly check writes to a listing when a previously confirmed tag stops confirming.
+          Published in full, because a warning people cannot see is a warning that can quietly get worse
+          later. This is the exact text the weekly check writes to a listing when a previously confirmed
+          tag stops confirming.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-lg border border-line bg-white p-4 font-mono text-[11px] leading-relaxed text-ink-soft">
           {SAMPLE_WARNING.text}
@@ -224,9 +471,9 @@ export default function Directory() {
           <Pill tone="unknown">Stage 3 — not built</Pill>
         </div>
         <p className="mt-2 max-w-3xl text-sm text-ink-soft">
-          Named after F1-style performance balancing: a listing with few upvotes but strong underlying signals gets
-          extra visibility, so good undiscovered tools are not buried under incumbents who won early and snowballed on
-          raw vote count.
+          Named after F1-style performance balancing: a listing with few upvotes but strong underlying
+          signals gets extra visibility, so good undiscovered tools are not buried under incumbents who won
+          early and snowballed on raw vote count.
         </p>
 
         <div className="mt-4 overflow-x-auto rounded-lg border border-line bg-white">
@@ -251,15 +498,16 @@ export default function Directory() {
         </div>
 
         <Callout variant="warn" className="mt-3" title="UNRATIFIED — do not treat these as final">
-          These thresholds are proposed, not decided. They must be ratified <strong>before</strong> the first grant, not
-          after: deciding the bar once you can see who clears it turns a rule into a favour. When Stage 3 is built, the
-          mechanism will run against these numbers but no listing will receive a boost automatically — every grant is a
-          manual founder decision, recorded on the listing.
+          These thresholds are proposed, not decided. They must be ratified <strong>before</strong> the
+          first grant, not after: deciding the bar once you can see who clears it turns a rule into a
+          favour. When Stage 3 is built, the mechanism will run against these numbers but no listing will
+          receive a boost automatically — every grant is a manual founder decision, recorded on the
+          listing.
         </Callout>
 
         <Callout variant="note" className="mt-3" title="Known gap">
-          Traffic data is least reliable for exactly the earliest-stage tools ADUO is meant to help. For very early
-          submissions, evaluate on reviews and ToS score alone, and add traffic once it exists.
+          Traffic data is least reliable for exactly the earliest-stage tools ADUO is meant to help. For
+          very early submissions, evaluate on reviews and ToS score alone, and add traffic once it exists.
         </Callout>
       </section>
 
@@ -272,19 +520,30 @@ export default function Directory() {
             <li>Upvote score and ToS transparency rating stay separate and clearly labelled — never one combined score.</li>
           </ul>
         </div>
-        <div className="rounded-lg border border-line bg-white p-4">
-          <h2 className="text-sm font-semibold text-ink">Anti-gaming (Stage 2)</h2>
+        <div className="rounded-lg border border-accent/30 bg-accent-soft/50 p-4">
+          <h2 className="text-sm font-semibold text-accent-ink">Anti-gaming, as built</h2>
           <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
-            <li>Account age minimum plus captcha on voting.</li>
-            <li>Upvotes decay daily, so a one-off pile-on cannot have a permanent effect.</li>
-            <li>One promotion campaign per submitter per week.</li>
+            <li>
+              One vote per account, enforced by the table’s primary key — a second attempt is a conflict,
+              not a second vote.
+            </li>
+            <li>
+              Account must be {VOTE_MIN_ACCOUNT_AGE_DAYS} days old. Checked in the database, so the browser
+              cannot talk its way past it.
+            </li>
+            <li>
+              Captcha before the vote counts, verified server-side in <code className="font-mono text-xs">cast-vote</code>.
+            </li>
+            <li>Old votes fade {Math.round(VOTE_DECAY_PER_DAY * 100)}% a day, so a pile-on cannot have a permanent effect.</li>
+            <li>One promotion campaign per submitter per week, shown publicly on the card.</li>
           </ul>
         </div>
       </section>
 
       <Callout variant="rule" title="What listing does not mean">
-        A confirmed tag proves control of a domain and that the site matches what was claimed. It is not a quality
-        mark, not a safety endorsement, and it changes nothing in the Phase 1 transparency database. See{' '}
+        A confirmed tag proves control of a domain and that the site matches what was claimed. It is not a
+        quality mark, not a safety endorsement, and it changes nothing in the Phase 1 transparency
+        database. See{' '}
         <Link to="/charter" className="underline underline-offset-2">
           the one rule
         </Link>

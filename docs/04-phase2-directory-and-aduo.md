@@ -9,7 +9,7 @@
 | On-demand ownership verification | **Live** — `verify-snippet` Edge Function |
 | Weekly snippet re-check + tamper warning | **Live** — `scripts/check-directory-snippets.mjs`, Thursdays 07:23 UTC |
 | `/directory` listing page | **Live** — shows confirmed submissions only |
-| Upvoting + anti-gaming | **Not built** (Stage 2) |
+| Upvoting + anti-gaming | **Live** — see below |
 | ADUO | **Not built** (Stage 3). Thresholds below are **UNRATIFIED**. |
 
 Everything live here is inert until a Supabase project is configured. With no env
@@ -92,12 +92,61 @@ traceability check fails the build if any is dropped:
 - Upvote score and ToS transparency rating are shown as separate, clearly labelled signals — never
   one combined score.
 
-## Anti-gaming (Stage 2, not built)
+## Voting
 
-- Account age minimum plus captcha on voting. Account age comes from `auth.users.created_at`, mirrored
-  into `profiles` — the one timestamp a user cannot forge.
-- Upvotes decay daily, so a one-off bot pile-on cannot have a permanent effect.
-- Submitters may run one promotion or vote campaign per week, preventing repeated brigading.
+Two buttons, one per account: **vouch for it** (+1) or **disapprove** (−1). There is no neutral
+option; an abstention is a row you do not insert.
+
+The number displayed is **not** a raw count. Each vote's weight decays:
+
+```
+weight = value × 0.9 ^ age_in_days,   for up to 90 days, then 0
+```
+
+| age | weight of one upvote |
+|---|---|
+| today | 1.00 |
+| 7 days | 0.48 |
+| 14 days | 0.23 |
+| 30 days | 0.04 |
+
+A 20-vote pile-on today is worth 4.6 in a fortnight and 0.85 in a month. A tool gaining one genuine
+vote a day for thirty days holds about 9.6. That asymmetry is the point: bursts fade, steady support
+accumulates. 90 days is the same shelf life the project already uses for a verified policy reading.
+
+Raw counts are shown next to the decayed score (`12 up · 3 down`), so a visitor can tell "many people
+voted" from "the votes are recent".
+
+**The upvote score is separate from the transparency score.** Different database, different
+computation, never added together. A tool can be honest with your data and unvouched-for, or widely
+liked and careless. The directory page says so above the listings, and a traceability check fails the
+build if the ranking path ever reads the votes table.
+
+## Anti-gaming, as built
+
+Every rule below is enforced in Postgres, not in the browser. A client-side check is a suggestion; a
+row level security policy is a wall.
+
+- **One vote per account** — the primary key on `votes (listing_id, voter_id)`. A second attempt is a
+  conflict, not a second vote.
+- **Account age minimum: 14 days** — enforced both in the insert policy and in `vote_eligibility()`,
+  which returns the reason in words the UI shows verbatim. Derived from `auth.users.created_at`, which
+  a user cannot forge.
+- **Captcha: hCaptcha**, verified server-side against `siteverify` inside the `cast-vote` Edge
+  Function. The secret is a function secret; a check fails the build if any browser code reads it.
+  Until it is configured, voting works and the directory says captcha is off.
+- **Daily decay: 10% per day**, applied in `vote_weight()` at read time. No stored running total that
+  could drift or be edited.
+- **One promotion campaign per submitter per week** — a unique index on `(created_by, week_start)`.
+  Campaigns are public: if a listing is being promoted this week, that is shown on its card.
+  Retraction is deliberately not exposed in the UI — a campaign that could be quietly withdrawn after
+  the votes land is a campaign with no cost.
+
+Votes are written only through `cast-vote`, which checks identity, captcha, account age and listing
+status on a machine the voter does not control. The policies behind it are a second wall.
+
+The UI constants (`VOTE_MIN_ACCOUNT_AGE_DAYS`, `VOTE_DECAY_PER_DAY`) are cross-checked against the SQL
+that enforces them, so the page can never describe one site while the database runs another.
 
 ## ADUO — balance-of-performance boost
 
@@ -143,6 +192,11 @@ submissions.
 ## Open questions
 
 - How to detect upvote manipulation beyond the measures above (bot rings, coordinated voting).
+- **Can you vote on your own submission?** The roadmap does not say, and the current build allows it —
+  one vote per account, the same as anyone else. Blocking it would be stricter but was not asked for.
+  Needs a decision.
+- Is a disapproval (−1) the right second button? It can be used to bury a competitor, and the decay
+  makes sustained burying cheap to sustain at low volume.
 - What "verified" confirms to a reader: control of a domain, and that the site matches its claim. Not
   quality, not safety. The wording has to make that impossible to misread.
 - Cost of snippet re-checks at scale — trivial at 20 listings, a real recurring job at 2,000.

@@ -96,14 +96,14 @@ export async function runSourceChecks() {
   const dbHits = []
   for (const f of rankingFiles) {
     const src = await read(f)
-    if (/supabase|listings|snippet_checks/.test(src)) dbHits.push(f)
+    if (/supabase|listings|snippet_checks|votes|campaigns/.test(src)) dbHits.push(f)
   }
   push(
     'Ranking and scoring never read the directory database',
     dbHits.length === 0,
     dbHits.length
-      ? `directory references in the ranking path: ${dbHits.join(', ')}`
-      : `${rankingFiles.join(', ')} are pure functions over the provider dataset`
+      ? `directory or vote references in the ranking path: ${dbHits.join(', ')}`
+      : `${rankingFiles.join(', ')} are pure functions over the provider dataset — no votes, no directory`
   )
 
   /* 4 — The verification snippet must stay public-crawl only. */
@@ -135,6 +135,66 @@ export async function runSourceChecks() {
     'Database refuses non-founder status changes (guard_listing_status trigger)',
     sql.includes('guard_listing_status') && sql.includes('raise exception'),
     sql ? 'trigger present on public.listings' : 'migration not found'
+  )
+
+  /* 6 — the anti-gaming numbers a visitor is told must be the ones the
+         database actually enforces. Otherwise the UI describes one site and the
+         database runs another. */
+  const votesJs = await read('src/lib/votes.js')
+  const votingSql = await read('supabase/migrations/0002_voting.sql').catch(() => '')
+  const { VOTE_MIN_ACCOUNT_AGE_DAYS, VOTE_DECAY_PER_DAY } = await import('../../src/lib/votes.js')
+
+  const sqlAge = votingSql.match(/interval '(\d+) days'/)?.[1]
+  push(
+    'Account-age rule in the UI matches the one the database enforces',
+    Number(sqlAge) === VOTE_MIN_ACCOUNT_AGE_DAYS,
+    `UI says ${VOTE_MIN_ACCOUNT_AGE_DAYS} days, database enforces ${sqlAge ?? 'nothing'}`
+  )
+
+  const sqlFactor = votingSql.match(/power\(([\d.]+)::numeric/)?.[1]
+  const expectedFactor = Number((1 - VOTE_DECAY_PER_DAY).toFixed(2))
+  push(
+    'Vote decay rate in the UI matches the one the database applies',
+    Math.abs(Number(sqlFactor) - expectedFactor) < 0.001,
+    `UI says ${VOTE_DECAY_PER_DAY * 100}%/day (factor ${expectedFactor}), SQL uses ${sqlFactor}`
+  )
+
+  push(
+    'One vote per account is enforced by the table, not by the interface',
+    /primary key\s*\(\s*listing_id\s*,\s*voter_id\s*\)/i.test(votingSql),
+    'votes has primary key (listing_id, voter_id)'
+  )
+
+  push(
+    'One promotion campaign per submitter per week is enforced by the table',
+    /create unique index[\s\S]{0,120}campaigns_one_per_submitter_per_week[\s\S]{0,120}\(created_by, week_start\)/.test(
+      votingSql
+    ),
+    'unique index on (created_by, week_start)'
+  )
+
+  /* 7 — the captcha secret is a server secret. If it is ever read in src/, it
+         lands in the bundle and anyone can mint passing tokens. Naming it in
+         setup instructions is fine; reading it is not, so this matches reads and
+         assignments rather than the bare word. */
+  const secretRead = /(?:import\.meta\.env|env|process\.env)[.\[\"'](?:VITE_)?HCAPTCHA_SECRET|(?:VITE_)?HCAPTCHA_SECRET\s*[:=]|Deno\.env\.get\(/
+  const secretHits = []
+  for (const f of files) {
+    const src = stripComments(await read(f))
+    if (secretRead.test(src)) secretHits.push(f)
+  }
+  push(
+    'Captcha secret never appears in browser code',
+    secretHits.length === 0,
+    secretHits.length ? secretHits.join(', ') : 'verified server-side in the cast-vote function'
+  )
+
+  /* 8 — the vote path must be server-side, or every check above is optional. */
+  push(
+    'Votes are written through the cast-vote function, never straight to the table',
+    /functions\.invoke\('cast-vote'/.test(stripComments(votesJs)) &&
+      !/from\('votes'\)\s*\.insert/.test(stripComments(votesJs)),
+    'client calls cast-vote; inserts happen only inside the function'
   )
 
   return checks

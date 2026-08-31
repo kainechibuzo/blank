@@ -74,22 +74,44 @@ configuration. The directory does need one. Until it is configured, `/directory`
 `/directory/submit` and `/account` render an explicit "not configured" state
 rather than failing.
 
-1. **Create a Supabase project**, then run the migration in the SQL editor:
-   `supabase/migrations/0001_phase2_directory.sql`. It creates `profiles`,
-   `listings` and the append-only `snippet_checks` log, turns on row level
-   security, and installs the trigger that stops anyone but a founder from
-   changing a listing's status.
+1. **Create a Supabase project**, then run the migrations in the SQL editor, in
+   order:
+   - `supabase/migrations/0001_phase2_directory.sql` — `profiles`, `listings`,
+     the append-only `snippet_checks` log, row level security, and the trigger
+     that stops anyone but a founder from changing a listing's status.
+   - `supabase/migrations/0002_voting.sql` — `votes`, `campaigns`, the decayed
+     scoring functions, and the anti-gaming policies (account age, one vote per
+     account, one campaign per submitter per week).
 2. **Set the browser env vars** (see `.env.example`):
    `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPPORT_EMAIL`. The anon
    key is designed to be public; row level security is what protects data.
 3. **Enable Google** in Supabase Auth → Providers, using your own Google OAuth
    client. Nothing about that touches this repo's code.
-4. **Deploy the verification function**: `supabase functions deploy verify-snippet`,
-   with `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` set as
-   function secrets. The service role key never appears in browser code — a
-   traceability check fails the build if it is ever referenced under `src/`.
+4. **Deploy both Edge Functions**:
+   `supabase functions deploy verify-snippet` and
+   `supabase functions deploy cast-vote`, with `SUPABASE_URL`,
+   `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` set as function secrets.
+   The service role key never appears in browser code — a traceability check
+   fails the build if it is ever referenced under `src/`.
+
+   Voting works without captcha, but nothing stops a script from voting until you
+   add it: set `VITE_HCAPTCHA_SITEKEY` for the browser and `HCAPTCHA_SECRET` as a
+   function secret. The directory page says so out loud while it is missing.
 5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
    GitHub Actions secrets. Without them the workflow skips cleanly and says so.
+
+### Voting parameters
+
+Decided by you, not defaulted by whoever wrote the code, and mirrored between
+the UI and the SQL — a check fails the build if the two drift apart:
+
+| Rule | Value | Where |
+|---|---|---|
+| Minimum account age to vote | 14 days | `VOTE_MIN_ACCOUNT_AGE_DAYS` + the insert policy |
+| Daily decay on a vote's weight | 10% per day | `VOTE_DECAY_PER_DAY` + `vote_weight()` |
+| Vote expiry | 90 days | `vote_weight()` |
+| Votes per account | 1 (changeable, not stackable) | primary key on `votes` |
+| Promotion campaigns | 1 per submitter per week | unique index on `campaigns` |
 
 ### Separation of the two datasets
 
@@ -100,7 +122,9 @@ in Postgres. Nothing flows from the directory into scoring or ranking:
   contain no reference to Supabase or the directory tables;
 - provider rows are scanned for `upvotes`, `aduo`, `traffic`,
   `review_sentiment` and `campaign` fields, none of which may ever appear;
-- a listing may link to a Phase 1 tool row for display only.
+- a listing may link to a Phase 1 tool row for display only;
+- the upvote score is computed in Postgres, the transparency score in
+  application code, and neither is an input to the other.
 
 ## Deploying to Vercel
 
