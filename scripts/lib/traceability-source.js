@@ -228,10 +228,21 @@ export async function runSourceChecks() {
     'only the weekly check (service role) may write snippet_state'
   )
 
+  const sharedSrc = stripComments(await read('src/components/SubmissionList.jsx'))
+  const accountSrc = stripComments(await read('src/pages/Account.jsx'))
+  const directorySrc = stripComments(await read('src/pages/Directory.jsx'))
+
+  // The edit button existed on /directory and was missing from /account until
+  // both were pointed at one component. This is what stops that recurring.
+  push(
+    'Submission controls are shared, so they cannot differ between pages',
+    /<SubmissionList/.test(accountSrc) && /<SubmissionList/.test(directorySrc),
+    '/account and /directory render the same SubmissionList component'
+  )
+
   push(
     'Re-verification is available after the edit window closes',
-    /requestVerification/.test(stripComments(listingsJs)) &&
-      /requestVerification/.test(stripComments(await read('src/pages/Directory.jsx'))),
+    /requestVerification/.test(stripComments(listingsJs)) && /requestVerification/.test(sharedSrc),
     'verification is not a one-shot favour granted at submission'
   )
 

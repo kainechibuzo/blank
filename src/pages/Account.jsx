@@ -4,6 +4,20 @@ import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
+import SubmissionList from '../components/SubmissionList.jsx'
+
+const MINE_FIELDS =
+  'id, name, url, category, blurb, claimed_description, status, snippet_state, review_required, warning_message, editable_until, submitted_at'
+
+async function fetchMine(userId) {
+  if (!supabase || !userId) return []
+  const { data } = await supabase
+    .from('listings')
+    .select(MINE_FIELDS)
+    .eq('owner_id', userId)
+    .order('submitted_at', { ascending: false })
+  return data ?? []
+}
 
 export default function Account() {
   const { user, profile, loading, configured, accountAgeDays, isFounder, signUp, signIn, signInWithGoogle, signOut } =
@@ -20,12 +34,7 @@ export default function Account() {
       setMine([])
       return
     }
-    supabase
-      .from('listings')
-      .select('id, name, url, status, snippet_state, review_required, submitted_at, verified_at')
-      .eq('owner_id', user.id)
-      .order('submitted_at', { ascending: false })
-      .then(({ data }) => setMine(data ?? []))
+    fetchMine(user.id).then(setMine)
   }, [user])
 
   if (!configured) {
@@ -152,30 +161,11 @@ export default function Account() {
         {mine.length === 0 ? (
           <p className="mt-2 text-sm text-ink-soft">Nothing submitted yet.</p>
         ) : (
-          <ul className="mt-3 space-y-2">
-            {mine.map((l) => (
-              <li key={l.id} className="rounded-lg border border-line bg-white p-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-medium text-ink">{l.name}</span>
-                  <span className="flex flex-wrap gap-1">
-                    <Pill tone={l.status === 'listed' ? 'good' : l.status === 'delisted' ? 'bad' : 'unknown'}>
-                      {l.status}
-                    </Pill>
-                    <Pill tone={l.snippet_state === 'ok' ? 'good' : l.snippet_state === 'unchecked' ? 'neutral' : 'mixed'}>
-                      snippet: {l.snippet_state}
-                    </Pill>
-                    {l.review_required && <Pill tone="bad">human review pending</Pill>}
-                  </span>
-                </div>
-                <p className="mt-1 truncate text-xs text-ink-faint">{l.url}</p>
-                {l.review_required && (
-                  <p className="mt-2 text-xs text-mixed">
-                    Nothing has been removed. A person will look at this before anything changes.
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
+          <SubmissionList
+            className="mt-3"
+            listings={mine}
+            onChanged={() => fetchMine(user?.id).then(setMine)}
+          />
         )}
       </section>
     </div>

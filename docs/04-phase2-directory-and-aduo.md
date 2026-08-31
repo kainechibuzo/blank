@@ -73,6 +73,10 @@ shown to a submitter cannot promise a window the database does not honour.
 control of the old address. A submitter may downgrade their own listing to pending inside the window;
 nobody can promote it except the bot, on a successful check.
 
+The controls appear on both `/account` and `/directory`, and both render the same
+`SubmissionList` component — a check fails the build if they ever diverge, because an edit button that
+exists on one page and not the other is a bug that had already happened once.
+
 **Re-checking is never time-boxed.** "Re-check snippet" stays available after the window closes.
 Verification is not a one-shot favour granted at submission, and someone who left the page mid-setup
 should not be stuck.
