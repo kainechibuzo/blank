@@ -65,6 +65,49 @@ npm run dev            # http://localhost:5173
 
 ---
 
+## Deploying to Vercel
+
+This is a client-routed single-page app, so the **rewrite rule in `vercel.json` is not optional** —
+without it, a direct visit to `/compare` or a refresh on `/tools/chatgpt` returns a 404, because
+Vercel looks for a file at that path and there isn't one. `vercel.json` ships with the fallback
+already configured, plus cache headers for hashed assets and a few baseline security headers.
+
+### Option A — Git import (recommended)
+
+1. Push the branch (already done: `arena/01a0580c-blank`).
+2. Go to [vercel.com/new](https://vercel.com/new), import `kainechibuzo/blank`.
+3. Vercel auto-detects **Vite**: build `npm run build`, output `dist`. Leave defaults alone.
+4. Deploy. Every push to the production branch redeploys; other branches get preview URLs.
+
+### Option B — CLI
+
+```bash
+npm i -g vercel
+vercel          # preview deployment
+vercel --prod   # production
+```
+
+### Before you point a domain at it
+
+- [ ] **Delete the `noindex, nofollow` meta tag in `index.html`.** It is deliberately blocking the
+      whole site from search engines while the dataset is draft. Forget this and the site is invisible.
+- [ ] Verify the first batch of rows and attach real `last_verified` dates — do not publish draft data.
+- [ ] Replace `[Working Title]` in `src/data/schema.js` (`SITE.name`) before anyone sees it.
+- [ ] Turn on the weekly policy hash check somewhere that can run cron (GitHub Actions is fine) —
+      Vercel's hobby plan does not run cron jobs.
+- [ ] Add `npm run check` to CI so the hard rules fail the build if a sponsor field or a fabricated
+      verification date ever sneaks in.
+
+### Vercel-specific notes
+
+- No environment variables or secrets are needed. There is no backend, no database, no API keys.
+- The site makes no third-party requests — no analytics, no fonts, no pixels — so there is nothing to
+  configure for CSP beyond what's in `vercel.json`.
+- Static hosting is free at this scale; the $20–50/mo estimate in the roadmap covers the point where
+  alerts and accounts need a real backend.
+
+---
+
 ## Structure
 
 ```
