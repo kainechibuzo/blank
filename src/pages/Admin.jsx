@@ -5,11 +5,30 @@ import { supabase } from '../lib/supabase.js'
 import { requestVerification } from '../lib/listings.js'
 import { TOOLS, DATASET_META, TOOL_BY_ID } from '../data/tools.js'
 import { ADUO, evaluateAduo } from '../lib/aduo.js'
+import { edgeFunctionUrl, probeEdgeFunction } from '../lib/edge.js'
 import { scoreTool } from '../lib/scoring.js'
 import { freshness } from '../lib/watchlist.js'
 import Collapsible from '../components/Collapsible.jsx'
 import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
+
+/**
+ * Three states, because the browser can only ever know three.
+ *
+ *  deployed   an HTTP response came back from our own code
+ *  not deployed  the gateway answered 404 — no function by that name
+ *  unreachable   no response at all: not deployed, wrong project ref, or CORS
+ */
+function backendTone(state) {
+  if (!state) return { tone: 'neutral', label: 'checking' }
+  if (state.deployed === true) {
+    return state.reason === 'ok' || state.status === 400
+      ? { tone: 'good', label: 'deployed' }
+      : { tone: 'mixed', label: 'deployed, failing' }
+  }
+  if (state.deployed === false) return { tone: 'bad', label: 'not deployed' }
+  return { tone: 'unknown', label: 'unreachable' }
+}
 
 const SNIPPET_TONE = { ok: 'good', altered: 'mixed', missing: 'mixed', unreachable: 'unknown', unchecked: 'neutral' }
 
@@ -46,6 +65,7 @@ export default function Admin() {
   const [voteSummary, setVoteSummary] = useState({})
   const [aduoForms, setAduoForms] = useState({})
   const [backend, setBackend] = useState(null)
+  const [probeTick, setProbeTick] = useState(0)
 
   const load = async () => {
     if (!supabase) return
@@ -76,29 +96,22 @@ export default function Admin() {
     if (isFounder) load()
   }, [isFounder])
 
-  // "The verify-snippet function is not deployed yet" is the single most
-  // confusing thing a founder hits. Show the state instead of letting an error
-  // message explain it after the fact.
+  // Whether the two Edge Functions are deployed is the single most confusing
+  // thing a founder hits — partly because it used to be *guessed* from the
+  // wording of an error message, so a function that was deployed and answering
+  // got reported as missing. Show what the browser actually observed instead.
   useEffect(() => {
     if (!isFounder || !supabase) return
-    const probe = async (name, body) => {
-      try {
-        const { error } = await supabase.functions.invoke(name, { body })
-        if (!error) return true
-        // A structured reply of any kind means the function exists. Only a
-        // fetch failure means it is not deployed.
-        return !/Failed to send a request|FunctionsFetchError|network/i.test(
-          `${error.name ?? ''} ${error.message ?? ''}`
-        )
-      } catch {
-        return false
+    let cancelled = false
+    Promise.all([probeEdgeFunction('verify-snippet'), probeEdgeFunction('cast-vote')]).then(
+      ([verify, cast]) => {
+        if (!cancelled) setBackend({ verify, cast })
       }
+    )
+    return () => {
+      cancelled = true
     }
-    Promise.all([
-      probe('verify-snippet', { listingId: 'probe' }),
-      probe('cast-vote', { listingId: 'probe', value: 1 }),
-    ]).then(([verify, cast]) => setBackend({ verify, cast }))
-  }, [isFounder])
+  }, [isFounder, probeTick])
 
   const checksByListing = useMemo(() => {
     const map = {}
@@ -406,33 +419,64 @@ export default function Admin() {
 
       {backend && (
         <div className="rounded-lg border border-line bg-white p-4">
-          <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
-            Backend functions
-          </p>
-          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm">
-            <span className="text-ink-soft">
-              verify-snippet:{' '}
-              <strong className={backend.verify ? 'text-good' : 'text-bad'}>
-                {backend.verify ? 'deployed' : 'NOT DEPLOYED'}
-              </strong>
-            </span>
-            <span className="text-ink-soft">
-              cast-vote:{' '}
-              <strong className={backend.cast ? 'text-good' : 'text-bad'}>
-                {backend.cast ? 'deployed' : 'NOT DEPLOYED'}
-              </strong>
-            </span>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-ink-faint">
+              Backend functions
+            </p>
+            <button
+              type="button"
+              onClick={() => setProbeTick((t) => t + 1)}
+              className="text-[11px] text-ink-soft underline decoration-line underline-offset-2 hover:text-ink"
+            >
+              Re-check
+            </button>
           </div>
-          {!(backend.verify && backend.cast) && (
+
+          {/* The host this build actually calls. A project reference with one
+              character wrong resolves to nothing, and the browser reports that
+              identically to a missing function — so show it rather than let it
+              be inferred from an error. */}
+          <p className="mt-1 break-all font-mono text-[11px] text-ink-faint">
+            {edgeFunctionUrl('verify-snippet')?.replace(/verify-snippet$/, '') ??
+              'VITE_SUPABASE_URL is not set'}
+          </p>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {[
+              ['verify-snippet', backend.verify],
+              ['cast-vote', backend.cast],
+            ].map(([name, state]) => (
+              <div key={name} className="rounded border border-line/70 p-3">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <code className="font-mono text-xs text-ink">{name}</code>
+                  <Pill tone={backendTone(state).tone}>{backendTone(state).label}</Pill>
+                  {state?.status != null && (
+                    <span className="font-mono text-[10px] text-ink-faint">HTTP {state.status}</span>
+                  )}
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-ink-soft">{state?.message}</p>
+                {state?.hint && (
+                  <code className="mt-1 block break-all font-mono text-[10px] text-ink-faint">
+                    {state.hint}
+                  </code>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {!(backend.verify?.deployed && backend.cast?.deployed) && (
             <pre className="mt-3 overflow-x-auto rounded bg-paper p-3 font-mono text-[11px] leading-relaxed text-ink-soft">
-{`supabase functions deploy verify-snippet
+{`supabase functions list   # confirm what is deployed, and in which project
+supabase functions deploy verify-snippet
 supabase functions deploy cast-vote
 supabase secrets set SUPABASE_URL=... SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=...`}
             </pre>
           )}
-          <p className="mt-2 text-[11px] text-ink-faint">
-            Until both are deployed, ownership cannot be confirmed and votes cannot be cast. The
-            interface says so rather than failing silently.
+          <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+            &ldquo;Unreachable&rdquo; does not only mean not deployed: a wrong project reference
+            and a reply blocked for missing CORS headers look the same from a browser. Both
+            functions now send CORS headers and answer preflight, so if one still reads
+            unreachable, check the host above against your project before redeploying.
           </p>
         </div>
       )}

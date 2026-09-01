@@ -1,0 +1,42 @@
+name: Deploy Edge Functions
+
+# Parked here because the GitHub App this branch is pushed with cannot write
+# .github/workflows/ (missing `workflows` permission). Copy it over by hand:
+#
+#   cp ops/workflows/deploy-edge-functions.yml .github/workflows/deploy.yml
+#
+# The only difference from the version already in .github/workflows/deploy.yml
+# is that this one deploys cast-vote as well as verify-snippet. The directory
+# needs both — voting and ownership verification — and /admin reports them
+# separately, so a half-deployed pair is the state that is hard to read.
+
+on:
+  push:
+    branches:
+      - main
+      - arena/01a0580c-blank
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Both of them, not just the one that was failing.
+      - run: |
+          supabase functions deploy verify-snippet --project-ref kubsqcegyxmkkhwqdrqn
+          supabase functions deploy cast-vote --project-ref kubsqcegyxmkkhwqdrqn
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      # Function secrets are separate from the deployment. Without them both
+      # functions answer a 500 that names what is missing, rather than crashing
+      # in a way the browser cannot read:
+      #
+      #   supabase secrets set --project-ref kubsqcegyxmkkhwqdrqn \
+      #     SUPABASE_URL=... SUPABASE_ANON_KEY=... SUPABASE_SERVICE_ROLE_KEY=...

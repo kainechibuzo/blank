@@ -102,9 +102,40 @@ rather than failing.
    The service role key never appears in browser code — a traceability check
    fails the build if it is ever referenced under `src/`.
 
+   Both functions answer CORS preflight and put `Access-Control-Allow-Origin`
+   on every response (`supabase/functions/_shared/cors.ts`). Without those
+   headers the browser throws the reply away and reports a network error, which
+   is indistinguishable from "not deployed" — which is how a deployed function
+   ended up being described that way.
+
    Voting works without captcha, but nothing stops a script from voting until you
    add it: set `VITE_HCAPTCHA_SITEKEY` for the browser and `HCAPTCHA_SECRET` as a
    function secret. The directory page says so out loud while it is missing.
+
+   `/admin` probes both functions on load and reports what the browser actually
+   observed — `deployed`, `not deployed` (the gateway answered 404), or
+   `unreachable` — with the HTTP status, the function's own message, and the
+   project host it is calling.
+
+   **If one reports `unreachable`**, in this order:
+
+   0. Check the *Deploy Edge Functions* workflow ran, and that it deploys
+      **both** functions. The workflow in `.github/workflows/deploy.yml`
+      deploys `verify-snippet` only; `ops/workflows/deploy-edge-functions.yml`
+      is the same file with `cast-vote` added — copy it over if you want both
+      kept in sync on push.
+   1. Compare the host printed on `/admin` with the project you deployed to. A
+      project reference with one character wrong resolves to nothing, and the
+      browser cannot tell that apart from a missing function.
+   2. Re-run `supabase functions deploy verify-snippet` — the CORS headers only
+      exist in the deployed copy, so a function deployed before that change will
+      keep failing until it is redeployed.
+   3. Confirm the secrets exist: a missing `SUPABASE_ANON_KEY` used to throw
+      inside the function and return a bare 500 that no browser could read. It
+      now returns a 500 that names what is missing.
+   4. Leave JWT verification at its default. Both functions authenticate the
+      caller themselves, so `--no-verify-jwt` is only ever a last resort for a
+      preflight that the gateway refuses — never a requirement.
 5. **Wire the weekly cron**: add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as
    GitHub Actions secrets. Without them the workflow skips cleanly and says so.
 

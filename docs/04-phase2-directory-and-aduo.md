@@ -88,8 +88,10 @@ an owner cannot mark their own tag "ok" and skip the crawl.
 ## Duplicate submissions
 
 One submission per site, per account. Without that rule, a submitter whose first attempt appeared to
-do nothing — usually because the verification function was not deployed yet — could pile up copies of
-the same claim, and the directory fills with duplicates.
+do nothing — because the verification call failed for a reason the page could not explain — could pile
+up copies of the same claim, and the directory fills with duplicates. Both halves are now fixed: the
+call reports what actually happened (see *Diagnosing an Edge Function* below), and the database refuses
+the duplicate regardless.
 
 - every listing carries a `site_key`: host + path, lowercased, with scheme, `www.`, query string and
   trailing slash stripped. `https://Example.com/` and `http://www.example.com/?utm=x` are the same site
@@ -277,3 +279,33 @@ submissions.
   quality, not safety. The wording has to make that impossible to misread.
 - Cost of snippet re-checks at scale — trivial at 20 listings, a real recurring job at 2,000.
 - What "contact support" operationally means. Early on: the founder's inbox. Say so plainly.
+
+## Diagnosing an Edge Function
+
+The interface used to infer "the function is not deployed" from the *wording* of a reply. A deployed
+`verify-snippet` answering `404 {"error": "Listing not found, or not yours"}` matched on the words
+"not found", and a working function was reported as missing. The wording of a reply is not evidence of
+whether a function exists.
+
+`src/lib/edge.js` is now the only place a failure is turned into a sentence, and it uses what the
+browser can actually observe:
+
+| what happened | verdict | why |
+| --- | --- | --- |
+| `FunctionsFetchError` — no response at all | **unknown** | not deployed, wrong project ref in `VITE_SUPABASE_URL`, or CORS blocked the reply. The browser cannot distinguish these three, so they are named together. |
+| 404 without our JSON shape | **not deployed** | Supabase's gateway answered — there is no function by that name. |
+| 4xx/5xx with `{"error": "..."}` | **deployed** | our code ran and said no. The message is the function's own. |
+| `FunctionsRelayError` | **deployed** | the platform could not reach a function that exists. |
+
+Three consequences worth knowing:
+
+- `/admin` prints the project host it is calling. A one-character project-ref typo is now visible
+  rather than inferred from an error message.
+- Both functions answer CORS preflight and tag every response (including errors and crashes) with
+  `Access-Control-Allow-Origin`. A crash used to return a bare 500 with no headers, which reads as a
+  network failure.
+- Missing function secrets return a 500 that names what is missing, instead of throwing inside
+  `createClient` and producing that same unreadable 500.
+
+A probe sends an empty body on purpose: both functions reject it with a 400 from their own code, so a
+404 can only mean the gateway has no function by that name — which is the one thing being tested.

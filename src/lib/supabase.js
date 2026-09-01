@@ -25,6 +25,23 @@ const anonKey = env.VITE_SUPABASE_ANON_KEY
 
 export const isConfigured = Boolean(url && anonKey)
 
+/**
+ * The project this build talks to. Not a secret — it is in the browser bundle
+ * anyway — and it is the single most useful thing to look at when an Edge
+ * Function "isn't deployed": a project ref with one character wrong resolves to
+ * nothing, and the browser reports that identically to a missing function.
+ * Shown on /admin for exactly that reason.
+ */
+export const SUPABASE_URL = url || ''
+
+export function supabaseHost() {
+  try {
+    return new URL(SUPABASE_URL).host
+  } catch {
+    return null
+  }
+}
+
 export const supabase = isConfigured ? createClient(url, anonKey) : null
 
 export const SUPPORT_EMAIL = env.VITE_SUPPORT_EMAIL || 'support@example.org'

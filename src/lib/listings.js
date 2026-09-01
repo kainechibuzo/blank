@@ -7,6 +7,7 @@
  */
 
 import { supabase } from './supabase.js'
+import { describeEdgeFailure } from './edge.js'
 
 export const EDIT_WINDOW_HOURS = 24
 
@@ -59,13 +60,16 @@ export async function updateListing(id, patch) {
  */
 export async function requestVerification(listingId) {
   if (!supabase) return { error: 'Not configured.' }
-  const { data, error } = await supabase.functions.invoke('verify-snippet', { body: { listingId } })
+  const { data, error, response } = await supabase.functions.invoke('verify-snippet', {
+    body: { listingId },
+  })
   if (error) {
-    return {
-      error: /not found|Failed to/i.test(error.message)
-        ? 'The verify-snippet function is not deployed yet.'
-        : error.message,
-    }
+    // Classify by error class and HTTP status, never by the wording of the
+    // reply. A 404 saying "Listing not found, or not yours" used to be reported
+    // as "the function is not deployed", which sent people to re-deploy a
+    // function that was working.
+    const failure = await describeEdgeFailure(error, response)
+    return { error: failure.message, failure }
   }
   if (data?.error) return { error: data.error }
   return { data }

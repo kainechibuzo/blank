@@ -329,6 +329,67 @@ export async function runSourceChecks() {
     'both normalise to host + path, lowercased, without scheme, www or query'
   )
 
+  /* 13 — Edge Function failures are diagnosed, never guessed.
+
+          A deployed function that answered 404 with "Listing not found, or not
+          yours" used to be reported as "not deployed", because the old code
+          inferred the cause from the wording of the reply. The wording of a
+          reply is not evidence of whether a function exists; the error class
+          and HTTP status are. These four checks keep it that way. */
+  const functionDirs = (await readdir(join(ROOT, 'supabase/functions'), { withFileTypes: true }))
+    .filter((e) => e.isDirectory() && !e.name.startsWith('_'))
+    .map((e) => `supabase/functions/${e.name}/index.ts`)
+
+  const functionSources = await Promise.all(
+    functionDirs.map(async (rel) => ({ rel, src: stripComments(await read(rel).catch(() => '')) }))
+  )
+  const corsModule = stripComments(
+    await read('supabase/functions/_shared/cors.ts').catch(() => '')
+  )
+
+  push(
+    'Every Edge Function answers CORS, including the preflight',
+    functionSources.length > 0 &&
+      functionSources.every(({ src }) => /_shared\/cors\.ts/.test(src) && /withCors|preflight/.test(src)) &&
+      /Access-Control-Allow-Origin/.test(corsModule) &&
+      /req\.method === 'OPTIONS'/.test(corsModule),
+    'a reply without those headers is discarded by the browser, which looks exactly like "not deployed"'
+  )
+
+  push(
+    'Edge Function failures are classified in exactly one place',
+    (await Promise.all(
+      ['src/lib/listings.js', 'src/pages/SubmitListing.jsx', 'src/pages/Admin.jsx'].map((rel) =>
+        read(rel).catch(() => '')
+      )
+    )).every((src) => /from '\.\.\/lib\/edge\.js'|from '\.\/edge\.js'/.test(stripComments(src))),
+    'every call site routes through src/lib/edge.js instead of reading error text itself'
+  )
+
+  const srcFiles = await walk('src')
+  const srcBodies = await Promise.all(srcFiles.map((rel) => read(rel).catch(() => '')))
+  const guessers = srcFiles.filter(
+    (rel, i) =>
+      rel !== 'src/lib/edge.js' &&
+      /Failed to send a request|is not deployed yet|not found\|Failed to/i.test(
+        stripComments(srcBodies[i])
+      )
+  )
+
+  push(
+    'Nothing infers "not deployed" from the wording of an error',
+    guessers.length === 0,
+    guessers.length
+      ? `still guessing in ${guessers.join(', ')}`
+      : 'the error class and HTTP status are the only evidence used'
+  )
+
+  push(
+    '/admin shows which project it is calling',
+    /edgeFunctionUrl/.test(adminJs) && /probeEdgeFunction/.test(adminJs),
+    'a project reference with one character wrong is visible, not inferred from an error message'
+  )
+
   push(
     'The same person cannot claim the same site twice',
     /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(

@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth.jsx'
 import { supabase } from '../lib/supabase.js'
 import { makeToken, snippetTag } from '../lib/snippet.js'
 import { siteKeyOf } from '../lib/sites.js'
+import { describeEdgeFailure } from '../lib/edge.js'
 import { CATEGORIES } from '../data/schema.js'
 import { TOOLS } from '../data/tools.js'
 import Callout from '../components/Callout.jsx'
@@ -109,21 +110,21 @@ export default function SubmitListing() {
 
   const verify = async () => {
     setVerifyState({ busy: true })
+    let response = null
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('verify-snippet', {
+      const invoked = await supabase.functions.invoke('verify-snippet', {
         body: { listingId: created.id },
       })
-      if (fnError) throw new Error(fnError.message)
+      response = invoked.response
+      const { data, error: fnError } = invoked
+      if (fnError) throw fnError
       setVerifyState({ busy: false, outcome: data?.outcome ?? 'unreachable', note: data?.note })
       setCreated({ ...created, snippet_state: data?.outcome ?? 'unreachable', status: data?.outcome === 'ok' ? 'listed' : created.status })
     } catch (err) {
-      setVerifyState({
-        busy: false,
-        error:
-          err?.message?.includes('not found') || err?.message?.includes('Failed to')
-            ? 'The verify-snippet Edge Function is not deployed yet. Deploy it with: supabase functions deploy verify-snippet'
-            : err?.message ?? 'Verification failed',
-      })
+      // Never infer "not deployed" from the wording of a reply. The error class
+      // and HTTP status are the signal; see src/lib/edge.js.
+      const failure = await describeEdgeFailure(err?.name ? err : null, response ?? err?.context)
+      setVerifyState({ busy: false, error: failure.message, failure })
     }
   }
 
