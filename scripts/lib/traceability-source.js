@@ -581,6 +581,44 @@ export async function runSourceChecks() {
         : `${live} of ${Object.keys(NO_SCORE_PAGES).length} pages written; neither mentions a score`
   )
 
+  /* 18 — No component decides what a fact means by looking at the value.
+
+          Constraint 1 of the Phase 2 brief, and the direct consequence of the
+          hole Phase 1 testing found: an unmapped value was falling through to
+          UNKNOWN, which would have rendered our own gap in coverage as a
+          provider's silence. A component that switches on `field.value` has
+          the same failure mode built in by hand — it silently invents a state
+          for any value it did not think of.
+
+          The only way to ask what a field means is stateForField, which
+          returns null for a value it cannot map so the caller has to shout
+          rather than guess.
+
+          Scoped to the display layer. The scorer and the pattern library are
+          supposed to work over raw values; that is their job. */
+  const RAW_VALUE_OK = [
+    /* Counts unknown fields for the admin summary. It is a count, not a
+       rendering, but it is the one place in the display layer that still
+       reads a value directly, and it is owed a migration. */
+    'src/pages/Admin.jsx',
+  ]
+  const rawValueReads = []
+  for (const rel of (await walk('src/pages')).concat(await walk('src/components'))) {
+    if (RAW_VALUE_OK.includes(rel)) continue
+    const code = stripComments(await read(rel).catch(() => ''))
+    if (/\.value\s*[!=]==/.test(code) || /switch\s*\([^)]*\.value/.test(code)) {
+      rawValueReads.push(rel)
+    }
+  }
+
+  push(
+    'No display component reads a raw field value',
+    rawValueReads.length === 0,
+    rawValueReads.length
+      ? rawValueReads.join(', ')
+      : 'every rendering asks stateForField what the value means, and gets null rather than a guess when it cannot say'
+  )
+
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
   const { STATES, stateForField } = await import('../../src/lib/field-states.js')
