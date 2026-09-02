@@ -55,6 +55,23 @@ export default function Methodology() {
         as a placeholder until it says otherwise.
       </Callout>
 
+      <Collapsible
+        title="How the build guards work"
+        collapseOnDesktop
+        defaultOpen
+        titleClassName="text-base font-semibold text-ink"
+      >
+        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
+          The dataset is protected by a suite of checks that runs on every commit, and no check joins
+          that suite until it has been shown to fail on a violation someone introduced by hand.{' '}
+          <strong className="text-ink">
+            Guards are tested to fail before they are trusted to pass. A check that cannot demonstrate
+            failure is not a check.
+          </strong>{' '}
+          The count of passing checks is reported with every change.
+        </p>
+      </Collapsible>
+
 <Collapsible title="The eight fields, and why these eight" collapseOnDesktop defaultOpen titleClassName="text-base font-semibold text-ink">        <p className="mt-2 max-w-3xl text-sm text-ink-soft">
           Each field is a question a person actually asks before typing something sensitive into a
           box. Scope discipline matters: every extra field is permanent verification labour, and

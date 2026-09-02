@@ -24,6 +24,7 @@ import Callout from '../components/Callout.jsx'
 import Pill from '../components/Pill.jsx'
 import Monogram from '../components/Monogram.jsx'
 import Collapsible from '../components/Collapsible.jsx'
+import { toolHref } from '../lib/urls.js'
 
 const THRESHOLDS = [
   ['Traffic trend', '≥ 15% month-on-month growth over 3 months, from a base of ≥ 1,000 monthly visits', 'Reliable only once a footprint exists — see the known gap below.'],
@@ -204,7 +205,7 @@ function ListingCard({ listing, summary, myVote, campaign, blockedReason, busy, 
           </span>
         )}
         {linked && (
-          <Link to={`/tools/${linked.id}`} className="ml-auto text-xs text-accent underline underline-offset-2">
+          <Link to={toolHref(linked)} className="ml-auto text-xs text-accent underline underline-offset-2">
             transparency row →
           </Link>
         )}

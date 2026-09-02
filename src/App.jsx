@@ -3,6 +3,7 @@ import Layout from './components/Layout.jsx'
 import Home from './pages/Home.jsx'
 import Compare from './pages/Compare.jsx'
 import ToolPage from './pages/ToolPage.jsx'
+import ToolRedirect from './components/ToolRedirect.jsx'
 import Discover from './pages/Discover.jsx'
 import Methodology from './pages/Methodology.jsx'
 import Charter from './pages/Charter.jsx'
@@ -22,7 +23,8 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="/what/:slug" element={<Result />} />
         <Route path="/compare" element={<Compare />} />
-        <Route path="/tools/:id" element={<ToolPage />} />
+        {/* Dead path. Canonical is /tool/[id] — see src/lib/urls.js. */}
+        <Route path="/tools/:id" element={<ToolRedirect />} />
         <Route path="/tool/:slug" element={<ToolPage />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/methodology" element={<Methodology />} />

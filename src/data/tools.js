@@ -91,7 +91,7 @@ export const TOOLS = [
 
   tool({
     id: 'chatgpt',
-    short_version: 'ChatGPT can use your chats to make its models better. That is on unless you turn it off in Settings. People may read chats in some cases, and you can delete your own chats at any time.',
+    short_version: 'ChatGPT can use your chats to make its models better. That is on unless you turn it off in your data controls. People may read chats in some cases, and you can delete your own chats at any time.',
     name: 'ChatGPT',
     vendor: 'OpenAI',
     category: 'assistant',
@@ -155,7 +155,7 @@ export const TOOLS = [
 
   tool({
     id: 'claude',
-    short_version: 'Claude does not learn from your chats unless you choose to let it. People may read conversations in limited cases, for example if something gets flagged. You can delete your own chats.',
+    short_version: 'Claude does not learn from your chats by default, but conversations flagged for safety review may be used to train its safety systems. People may read conversations in limited cases. You can delete your own chats.',
     name: 'Claude',
     vendor: 'Anthropic',
     category: 'assistant',
@@ -219,7 +219,7 @@ export const TOOLS = [
 
   tool({
     id: 'gemini',
-    short_version: 'Google says people may read your conversations, and there is no setting that turns this off. Turning off activity saving does not stop Google using chats to improve its services. You can delete your chats yourself.',
+    short_version: 'Google says people may read your conversations, and there is no setting that turns this off. Turning off activity saving does not stop Google using chats to improve its services. You can delete your chats, but chats a human reviewer has seen are kept anyway.',
     name: 'Gemini',
     vendor: 'Google',
     category: 'assistant',
@@ -434,7 +434,7 @@ export const TOOLS = [
 
   tool({
     id: 'grok',
-    short_version: 'Grok can use your chats to train its models, and we found no way to turn that off. Its policy says conversations are deleted within 30 days. We could not find whether people read your chats.',
+    short_version: 'Grok can use your chats to train its models, and we did not find a way to turn that off. Private Chats are deleted within 30 days; everything else is kept as long as the business needs it. We could not find whether people read your chats.',
     name: 'Grok',
     vendor: 'xAI',
     category: 'assistant',
@@ -495,7 +495,7 @@ export const TOOLS = [
 
   tool({
     id: 'le-chat',
-    short_version: 'Le Chat can learn from your chats unless you turn that off in Settings. People may read conversations in limited cases. You can delete your own chats.',
+    short_version: 'Le Chat can learn from your chats unless you turn that off using a setting in your account. People may read conversations in limited cases. You can delete your own chats.',
     name: 'Le Chat',
     vendor: 'Mistral AI',
     category: 'assistant',

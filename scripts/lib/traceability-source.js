@@ -921,6 +921,27 @@ export async function runSourceChecks() {
       : `no red; STALE and NEEDS_DECISION gone; orange reserved to NO_REMEDY; four sentences verbatim; all ${unmappedCount} schema values mapped`
   )
 
+  /* 26 — One canonical path per tool.
+          /tools/[id] and /tool/[id] rendered the same component from the same
+          data for a while, which meant two crawlable paths to one page. The
+          plural form is now a redirect and nothing else: it may exist as a
+          route, it may not be linked to from anywhere.
+          This scans link attributes, not route definitions — the redirect route
+          in App.jsx is supposed to say /tools/, a link to it is not. */
+  const toolsLinks = []
+  for (const rel of (await walk('src/pages')).concat(await walk('src/components'))) {
+    const body = stripComments(await read(rel).catch(() => ''))
+    const hits = body.match(/\b(?:to|href)=\{?[`"]\/tools\//g)
+    if (hits) toolsLinks.push(`${rel} (${hits.length})`)
+  }
+  push(
+    'No internal link points at the dead /tools/ path',
+    toolsLinks.length === 0,
+    toolsLinks.length
+      ? `links to /tools/ in ${toolsLinks.join(', ')}`
+      : 'every tool link goes through toolHref() in src/lib/urls.js'
+  )
+
   push(
     'The same person cannot claim the same site twice',
     /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(

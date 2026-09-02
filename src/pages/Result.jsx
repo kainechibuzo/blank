@@ -5,6 +5,7 @@ import { groupTools } from '../lib/consequence.js'
 import ToolResultCard from '../components/ToolResultCard.jsx'
 import ColourLegend from '../components/ColourLegend.jsx'
 import NotFound from './NotFound.jsx'
+import { toolHref } from '../lib/urls.js'
 
 /**
  * Result — what actually happens to the thing you were about to paste.
@@ -105,7 +106,7 @@ export default function Result() {
                         sentence={sentence}
                         state={state}
                         offByDefault={offByDefault}
-                        href={`/tools/${tool.id}`}
+                        href={toolHref(tool)}
                       />
                     ))}
                   </div>
@@ -119,7 +120,7 @@ export default function Result() {
                       sentence={sentence}
                       state={state}
                       offByDefault={offByDefault}
-                      href={`/tools/${tool.id}`}
+                      href={toolHref(tool)}
                     />
                   ))}
                 </div>

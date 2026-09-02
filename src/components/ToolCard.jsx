@@ -5,6 +5,7 @@ import Monogram from './Monogram.jsx'
 import Pill from './Pill.jsx'
 import ScoreDial from './ScoreDial.jsx'
 import VerificationBadge from './VerificationBadge.jsx'
+import { toolHref } from '../lib/urls.js'
 
 function shortValue(key, tool) {
   if (key === 'residency') {
@@ -62,7 +63,7 @@ export default function ToolCard({ tool, rank, matched = [], compact = false }) 
             <div className="flex items-center gap-2">
               {rank ? <span className="font-mono text-xs text-ink-faint">#{rank}</span> : null}
               <h3 className="truncate text-base font-semibold text-ink">
-                <Link to={`/tools/${tool.id}`} className="hover:underline">
+                <Link to={toolHref(tool)} className="hover:underline">
                   {tool.name}
                 </Link>
               </h3>
@@ -107,7 +108,7 @@ export default function ToolCard({ tool, rank, matched = [], compact = false }) 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-4">
         {verified && <VerificationBadge tool={tool} showAge={false} />}
         <Link
-          to={`/tools/${tool.id}`}
+          to={toolHref(tool)}
           className="ml-auto inline-flex min-h-[36px] items-center text-xs font-medium text-accent hover:underline"
         >
           Full breakdown →

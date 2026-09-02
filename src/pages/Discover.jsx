@@ -11,6 +11,7 @@ import Pill from '../components/Pill.jsx'
 import Monogram from '../components/Monogram.jsx'
 import Collapsible from '../components/Collapsible.jsx'
 import { scoreTool } from '../lib/scoring.js'
+import { toolHref } from '../lib/urls.js'
 
 function TracePanel({ plan, result, sig }) {
   const href = `/compare?${encodeState({ filters: result.filters, category: result.category, sort: 'score' })}`
@@ -320,7 +321,7 @@ export default function Discover() {
           {TOOLS.map((t) => (
             <span key={t.id} className="flex items-center gap-1.5 text-xs text-ink-soft">
               <Monogram tool={t} size="sm" />
-              <Link to={`/tools/${t.id}`} className="hover:underline">
+              <Link to={toolHref(t)} className="hover:underline">
                 {t.name}
               </Link>
               <span className="font-mono text-[10px] text-ink-faint">{scoreTool(t).score}</span>

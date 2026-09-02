@@ -4,6 +4,7 @@ import { KEY_FIELDS, PLAIN_FIELDS, plainLabel } from '../lib/plain-labels.js'
 import { stateForField } from '../lib/field-states.js'
 import ScoreBar from './ScoreBar.jsx'
 import FieldState from './FieldState.jsx'
+import { toolHref } from '../lib/urls.js'
 
 /**
  * ComparisonRow — one row, expandable in place.
@@ -86,7 +87,7 @@ export default function ComparisonRow({ tool, rank, expanded, onToggle }) {
 
           <p className="mt-3">
             <Link
-              to={`/tools/${tool.id}`}
+              to={toolHref(tool)}
               className="inline-flex min-h-[44px] items-center text-sm font-medium text-accent hover:underline"
             >
               Full tool page →

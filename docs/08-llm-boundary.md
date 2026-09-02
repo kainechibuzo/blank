@@ -93,6 +93,28 @@ This rule will be tested the first time someone writes marketing copy for this
 site, or adds a field, or maps a new value to `OPT_OUT_EXISTS` because it looked
 close enough. Re-read this section before doing any of those.
 
+### The second standing copy rule (added 2 Sep 2026)
+
+> **"We did not find X" is a statement about our search. "There is no X" is a
+> statement about the product. Only the first is ours to make.**
+
+One reading pass over one policy page produces absence of evidence, not evidence
+of absence. A short version reading *"we found no way to turn that off"* is a
+claim about Grok that we cannot support — and the row's own note says the
+question still needs re-checking. The approved form is *"we did not find a way
+to turn that off"*, which reports what we did and implies nothing about what
+exists.
+
+This applies to every short version, every summary sentence, and every piece of
+marketing copy written for this site. It is the same discipline as the rule
+above: the site is worth reading because it says exactly what it found and no
+more, and it is worth nothing the moment it says one thing more.
+
+Where a state genuinely does carry a claim about the product — `NO_REMEDY` —
+the approved sentence states it plainly and is never softened into a search
+report: *"There is no opt-out on this plan."* We make that claim only because
+the policy was read and it says so.
+
 ---
 
 ## The parse step today (recorded 2 Sep 2026)

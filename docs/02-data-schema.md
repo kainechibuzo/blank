@@ -28,7 +28,7 @@ residency: { hq_jurisdiction: 'US', eu_option: true, regions: ['US', 'EU'], note
 ```js
 {
   id, name, vendor, category, hq, url, blurb, monogram, accent,
-  fields: { trains_on_data: { value, note }, … },
+  fields: { trains_on_data: { value, source, note }, … },   // no read_on — see Known limitations
   verification: { status, last_verified, reviewer, method },
   policy_sources: [{ label, url, last_hash, last_checked }],
   community_signal: null,   // Phase 2 axis — null on purpose
@@ -69,3 +69,23 @@ parity 10, enterprise terms 5. Bands: Strong ≥ 75, Mixed ≥ 55, Weak below.
   noted on the tool page itself.
 - **Developer API eligibility by country/status** ("can I use this API as a student in Nigeria").
   Real idea, different schema, different audience, separate product if ever.
+
+## Known limitations
+
+Gaps in the schema as it stands. Each one is a thing the site cannot currently
+say, and saying it anyway would be a fabrication.
+
+**Per-field read dates do not exist.** No field carries a `read_on`. The only
+date on a row is `verification.last_verified`, which records when the row as a
+whole was read. The tool page can therefore say "Last read: [date]" for the tool,
+but cannot say when any individual field was last confirmed. If a row is read
+field by field across several days, the page reports the newest date and
+attributes it to all seven fields — overstating the freshness of the older ones.
+Fixing this means adding `read_on` to the field shape and backfilling the six
+rows already read.
+
+**Source hashes are not stored until the watchdog runs its first pass.**
+`policy_sources[].last_hash` exists in the shape above and is null on every row.
+Until the scheduled watchdog populates it, no source can be detected as changed,
+so `STALE` cannot be reached and nothing on the site can tell a reader that a
+policy we verified has since been edited.
