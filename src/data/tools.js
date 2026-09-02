@@ -12,7 +12,15 @@
  * Rules when editing:
  *   1. Never set verification.status to 'verified' unless a human has actually
  *      read the linked policy on the recorded date. Fake verification destroys
- *      the only asset this product has.
+ *      the only asset this product has. Five rows (ChatGPT, Claude, Gemini,
+ *      Perplexity, Le Chat) were marked verified with a date while no one had
+ *      read anything; they were downgraded back to draft-unverified on
+ *      2026-09-01 rather than left showing a green Verified pill they had not
+ *      earned.
+ *   1b. A machine fetch is not a verification. The checker in
+ *      scripts/check-policy-pages.mjs records what it saw and when (status
+ *      'observed'); only a person reading it sets 'verified'. Those are
+ *      different fields — last_checked vs last_verified — on purpose.
  *   2. Never fabricate a last_verified date. Null means "never verified".
  *   3. Notes are paraphrase-only. Never paste policy text verbatim — quote
  *      nothing longer than a short fragment, and prefer describing the effect.
@@ -115,8 +123,8 @@ export const TOOLS = [
       },
     },
     verification: {
-      status: 'verified',
-      last_verified: '2026-08-31',
+      status: 'draft-unverified',
+      last_verified: null,
       reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
       method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },
@@ -171,8 +179,8 @@ export const TOOLS = [
       },
     },
     verification: {
-      status: 'verified',
-      last_verified: '2026-08-31',
+      status: 'draft-unverified',
+      last_verified: null,
       reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
       method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },
@@ -228,8 +236,8 @@ export const TOOLS = [
       },
     },
     verification: {
-      status: 'verified',
-      last_verified: '2026-08-31',
+      status: 'draft-unverified',
+      last_verified: null,
       reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
       method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },
@@ -283,8 +291,8 @@ export const TOOLS = [
       },
     },
     verification: {
-      status: 'verified',
-      last_verified: '2026-08-31',
+      status: 'draft-unverified',
+      last_verified: null,
       reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
       method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },
@@ -481,8 +489,8 @@ export const TOOLS = [
       },
     },
     verification: {
-      status: 'verified',
-      last_verified: '2026-08-31',
+      status: 'draft-unverified',
+      last_verified: null,
       reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
       method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
     },

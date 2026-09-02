@@ -390,6 +390,52 @@ export async function runSourceChecks() {
     'a project reference with one character wrong is visible, not inferred from an error message'
   )
 
+  /* 14 — The policy observer records; it never verifies.
+
+          A bot that fetches a page is not a person who read it. The whole
+          point of this product is that a human confirmed each row against the
+          page on a recorded date, so the cheap automation must be physically
+          unable to fake that. */
+  const observer = stripComments(await read('scripts/check-policy-hashes.mjs'))
+  const gitignore = await read('.gitignore').catch(() => '')
+  const { VERIFICATION_STATUSES } = await import('../../src/data/schema.js')
+
+  push(
+    'The policy observer cannot verify a row',
+    !/status\s*[:=]\s*['"]verified['"]/.test(observer) &&
+      !/last_verified\s*[:=]\s*(?!null)\S/.test(observer) &&
+      !/writeFile\([^)]*tools\.js/.test(observer),
+    'it writes observations only; only a person sets verification'
+  )
+
+  push(
+    'Matched policy text is never committed',
+    /policy-excerpts\.local\.json/.test(gitignore) &&
+      /flag\('excerpts'\)/.test(observer) &&
+      /EXCERPT_FILE/.test(observer),
+    'sentences go to a gitignored local file for a human reviewer, never the repo'
+  )
+
+  push(
+    'Observed and verified are different states',
+    Boolean(VERIFICATION_STATUSES.observed) &&
+      VERIFICATION_STATUSES.observed.tone !== 'good' &&
+      VERIFICATION_STATUSES.verified.tone === 'good',
+    'a fetch is recorded as observed; only a human read makes it verified'
+  )
+
+  const { TOOLS: TOOLS_FOR_SOURCES } = await import('../../src/data/tools.js')
+  const unsourced = TOOLS_FOR_SOURCES.filter(
+    (t) => !Array.isArray(t.policy_sources) || !t.policy_sources.length ||
+      !t.policy_sources.every((s) => /^https?:\/\//.test(s.url ?? ''))
+  )
+
+  push(
+    'Every provider cites at least one real policy URL',
+    unsourced.length === 0,
+    unsourced.length ? `no source for ${unsourced.map((t) => t.id).join(', ')}` : 'no row exists without a link to the page it came from'
+  )
+
   push(
     'The same person cannot claim the same site twice',
     /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(

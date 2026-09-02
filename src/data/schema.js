@@ -24,6 +24,12 @@ export const VERIFICATION_STATUSES = {
     blurb:
       'Entered to exercise the schema. No human has read the policy and confirmed this row. Do not rely on it.',
   },
+  observed: {
+    label: 'Observed — not reviewed',
+    tone: 'unknown',
+    blurb:
+      'The policy page was fetched by the checker and recorded on the stated date. A machine noting that a page says something is not a person confirming it. Nothing here is confirmed until a human reads the page.',
+  },
   verified: {
     label: 'Verified',
     tone: 'good',

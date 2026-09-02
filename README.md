@@ -119,11 +119,10 @@ rather than failing.
 
    **If one reports `unreachable`**, in this order:
 
-   0. Check the *Deploy Edge Functions* workflow ran, and that it deploys
-      **both** functions. The workflow in `.github/workflows/deploy.yml`
-      deploys `verify-snippet` only; `ops/workflows/deploy-edge-functions.yml`
-      is the same file with `cast-vote` added — copy it over if you want both
-      kept in sync on push.
+   0. Check the *Deploy Edge Functions* workflow ran. It runs
+      `supabase functions deploy --project-ref …` with no function name, which
+      deploys every function under `supabase/functions/` — so both
+      `verify-snippet` and `cast-vote` are covered on every push.
    1. Compare the host printed on `/admin` with the project you deployed to. A
       project reference with one character wrong resolves to nothing, and the
       browser cannot tell that apart from a missing function.
@@ -321,7 +320,8 @@ src/
   components/          Layout, ToolCard, FilterRail, ScoreDial, Pill, …
   pages/               Home, Compare, ToolPage, Discover, Methodology, Charter, Directory, Sponsors
 scripts/
-  check-policy-hashes.mjs       weekly freshness: fetch → normalise → hash → report
+  check-policy-hashes.mjs       weekly policy observer: fetch → record what it saw → hash →
+                               report. Records observations; it cannot verify a row.
   check-directory-snippets.mjs  weekly ownership re-check: flag, never delist
   traceability-check.mjs        CI assertion runner
   lib/traceability-source.js    source-scanning rules (node only)

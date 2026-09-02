@@ -11,3 +11,6 @@ npm-debug.log*
 
 # Local-only output from scripts/check-policy-hashes.mjs
 data/policy-hashes.local.json
+
+# Local-only: sentences a human reads to judge the checker. Never commit.
+data/policy-excerpts.local.json
