@@ -518,7 +518,10 @@ export async function runSourceChecks() {
   const AWAITING_FACTPAIR = [
     'src/components/ScoreDial.jsx',
     'src/components/ToolCard.jsx',
-    'src/pages/Home.jsx',
+    /* Home.jsx is NOT on this list. It was, twice — once in the original list
+       and once added in 6b8b5ed with a note saying it would come off again.
+       Only the second was removed, so the guard stayed inert while being
+       reported as live. The Phase 2 homepage carries no score, so it passes. */
     'src/pages/Discover.jsx',
     'src/pages/Methodology.jsx',
     'src/pages/Directory.jsx',
