@@ -789,11 +789,8 @@ export async function runSourceChecks() {
   /* The old tool page is exempt until the Phase 4 rebuild lands, and it comes
      off this list in the SAME commit that rebuilds the page — one entry, one
      removal, verified by reading the message this check prints afterwards. */
-  const AWAITING_TOOL_PAGE_REBUILD = ['src/pages/ToolPage.jsx']
   const toolPageRel = 'src/pages/ToolPage.jsx'
-  const toolPage = AWAITING_TOOL_PAGE_REBUILD.includes(toolPageRel)
-    ? null
-    : await read(toolPageRel).catch(() => null)
+  const toolPage = await read(toolPageRel).catch(() => null)
 
   if (toolPage === null) {
     push(
@@ -802,7 +799,13 @@ export async function runSourceChecks() {
       'ToolPage.jsx not rebuilt yet — the guard goes live with it'
     )
   } else {
-    const lines = stripComments(toolPage).split('\n')
+    // Only the markup counts. Imports and the component body both mention
+    // scores without rendering one — `scoreTool(tool)` is a function call, not
+    // a figure on the page. Slicing from `return (` is what makes this a claim
+    // about what a reader sees first.
+    const allLines = stripComments(toolPage).split('\n')
+    const start = allLines.findIndex((l) => /^\s*return\s*\(?/.test(l))
+    const lines = start === -1 ? [] : allLines.slice(start)
     const firstScore = lines.findIndex((l) => /score/i.test(l))
     const barLine = lines.findIndex((l) => /<ScoreBar/.test(l))
     push(

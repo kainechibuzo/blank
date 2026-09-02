@@ -37,3 +37,19 @@ export function datasetSummary() {
     allRowsRead: rowsRead === DATASET_META.tool_count,
   }
 }
+
+/**
+ * The newest date any field on this one tool was read.
+ *
+ * Per-tool, and taken from the fields rather than from the row's verification
+ * date, because a row can carry a date that no individual field can back up —
+ * which is how a page ends up claiming a freshness it does not have.
+ */
+export function toolLastReadOn(tool) {
+  let latest = null
+  for (const key of FIELD_ORDER) {
+    const on = tool.fields?.[key]?.read_on
+    if (on && (!latest || on > latest)) latest = on
+  }
+  return latest
+}

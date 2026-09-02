@@ -23,6 +23,7 @@ export default function App() {
         <Route path="/what/:slug" element={<Result />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/tools/:id" element={<ToolPage />} />
+        <Route path="/tool/:slug" element={<ToolPage />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/methodology" element={<Methodology />} />
         <Route path="/charter" element={<Charter />} />
