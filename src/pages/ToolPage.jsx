@@ -5,6 +5,8 @@ import { scoreTool } from '../lib/scoring.js'
 import { toolLastReadOn } from '../lib/dataset-summary.js'
 import { formatDate } from '../lib/format.js'
 import ScoreBar from '../components/ScoreBar.jsx'
+import FactRow from '../components/FactRow.jsx'
+import { PLAIN_FIELDS } from '../lib/plain-labels.js'
 import NotFound from './NotFound.jsx'
 
 /**
@@ -26,6 +28,13 @@ export default function ToolPage() {
 
   const s = scoreTool(tool)
   const lastRead = toolLastReadOn(tool)
+
+  /* If every field that was read came from one page, say so. If they came from
+     several — which they usually do, because training lives on a help page and
+     retention lives in a privacy policy — say the source is per fact, rather
+     than implying one document covers everything. */
+  const readSources = FIELD_ORDER.map((k) => tool.fields?.[k]?.source).filter(Boolean)
+  const allOneSource = readSources.length > 0 && new Set(readSources).size === 1
 
   return (
     <article className="mx-auto max-w-2xl">
@@ -92,6 +101,24 @@ export default function ToolPage() {
             for now.
           </p>
         )}
+      </section>
+
+      {/* ── BLOCK 3 — the seven facts ───────────────────────────────────── */}
+      <section className="mt-10">
+        <h2 className="font-serif text-2xl text-ink">
+          The {wordForNumber(FIELD_ORDER.length)} facts
+        </h2>
+        <p className="mt-0.5 text-sm text-ink-faint">
+          {allOneSource
+            ? `All read from ${tool.vendor}'s own policy page.`
+            : `Read from ${tool.vendor}'s policy pages — source linked per fact.`}
+        </p>
+
+        <ul className="mt-4 space-y-4">
+          {PLAIN_FIELDS.map(({ key }) => (
+            <FactRow key={key} tool={tool} fieldKey={key} readOn={lastRead} />
+          ))}
+        </ul>
       </section>
     </article>
   )
