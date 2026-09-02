@@ -725,6 +725,97 @@ export async function runSourceChecks() {
       : `${(FILTERS ?? []).length} filter labels, all third-person claims about the tool`
   )
 
+  /* 23 — No fact is ever labelled with its schema key.
+          "trains_on_data" is a column name. "Does it learn from your chats?" is
+          a question a person can answer about their own life. Rendering the key
+          is the kind of thing that survives a design review because everyone
+          reading it knows what it means. */
+  const { plainLabel } = await import('../../src/lib/plain-labels.js')
+  const schemaForLabels = await import('../../src/data/schema.js')
+  const LABEL_KEYS = schemaForLabels.FIELD_ORDER
+  const schemaKeyFields = LABEL_KEYS.filter((k) => plainLabel(k) === k)
+  const keyLabelled = []
+  for (const rel of (await walk('src/pages')).concat(await walk('src/components'))) {
+    const body = stripComments(await read(rel).catch(() => ''))
+    // A schema key sitting in JSX text, e.g. >trains_on_data< — not as a prop
+    // or an object key, both of which are correct and necessary.
+    if (new RegExp(`>\\s*['"]?(?:${LABEL_KEYS.join('|')})['"]?\\s*<`).test(body)) {
+      keyLabelled.push(rel)
+    }
+  }
+  push(
+    'No fact renders with its schema key instead of its plain label',
+    schemaKeyFields.length === 0 && keyLabelled.length === 0,
+    schemaKeyFields.length
+      ? `no plain label defined for: ${schemaKeyFields.join(', ')}`
+      : keyLabelled.length
+        ? `schema key rendered as text in ${keyLabelled.join(', ')}`
+        : `all ${LABEL_KEYS.length} fields have plain-English labels, and no page prints a key`
+  )
+
+  /* 24 — "Contact support" is not a step.
+          A step is something a person can do themselves, in the product, now.
+          Sending them to a support queue is not an instruction, it is a
+          referral, and it makes the page look helpful while handing the reader
+          nothing. This is a data-quality rule, not a display choice, so it
+          fails the build rather than hiding the link. */
+  const { TOOLS: TOOLS_FOR_STEPS } = await import('../../src/data/tools.js')
+  const badSteps = []
+  let stepCount = 0
+  for (const t of TOOLS_FOR_STEPS) {
+    for (const key of LABEL_KEYS) {
+      const steps = t.fields?.[key]?.steps
+      if (!Array.isArray(steps)) continue
+      stepCount += 1
+      if (steps.some((s) => /contact\s+(support|us)/i.test(String(s)))) {
+        badSteps.push(`${t.id}.${key}`)
+      }
+    }
+  }
+  push(
+    'No "How to do this" step hands the reader to support',
+    badSteps.length === 0,
+    badSteps.length
+      ? `steps say contact support: ${badSteps.join(', ')}`
+      : `${stepCount} step arrays in the dataset, none of them a referral`
+  )
+
+  /* 25 — The score is the last thing in the identity block, never the first.
+          A tool page that opens with a number has already answered the wrong
+          question: the reader came to find out what happens to their data, and
+          a score is a verdict about the tool, not a statement about them.
+          Checked by order in the file rather than by eye: the first line of the
+          page's markup mentioning a score must be the ScoreBar. */
+  /* The old tool page is exempt until the Phase 4 rebuild lands, and it comes
+     off this list in the SAME commit that rebuilds the page — one entry, one
+     removal, verified by reading the message this check prints afterwards. */
+  const AWAITING_TOOL_PAGE_REBUILD = ['src/pages/ToolPage.jsx']
+  const toolPageRel = 'src/pages/ToolPage.jsx'
+  const toolPage = AWAITING_TOOL_PAGE_REBUILD.includes(toolPageRel)
+    ? null
+    : await read(toolPageRel).catch(() => null)
+
+  if (toolPage === null) {
+    push(
+      'The tool page opens with the tool, not with a score',
+      true,
+      'ToolPage.jsx not rebuilt yet — the guard goes live with it'
+    )
+  } else {
+    const lines = stripComments(toolPage).split('\n')
+    const firstScore = lines.findIndex((l) => /score/i.test(l))
+    const barLine = lines.findIndex((l) => /<ScoreBar/.test(l))
+    push(
+      'The tool page opens with the tool, not with a score',
+      barLine !== -1 && (firstScore === -1 || firstScore >= barLine),
+      barLine === -1
+        ? 'the tool page renders no ScoreBar at all'
+        : firstScore === -1
+          ? 'the page never mentions a score before the bar'
+          : `first score mention is line ${firstScore + 1}; the bar is on line ${barLine + 1}`
+    )
+  }
+
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
   const { STATES, stateForField } = await import('../../src/lib/field-states.js')
