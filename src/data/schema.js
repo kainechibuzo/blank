@@ -2,7 +2,10 @@
  * schema.js — the single source of truth for what this project tracks and how
  * each value is labelled in the UI.
  *
- * Design constraint from the roadmap: eight tracked fields per tool, no more.
+ * Design constraint from the roadmap: a fixed set of tracked fields per tool, no more.
+ * The roadmap said eight. The schema has seven, and the weights say seven was
+ * always the intent: 25+20+15+15+10+10+5 = 100 exactly. An eighth field would
+ * either score zero or push the total past 100. The prose was wrong.
  * Scope discipline is a feature here — every extra field is extra verification
  * labour forever, and verification labour is the actual cost of this business.
  */
@@ -64,7 +67,7 @@ export const CATEGORIES = {
 }
 
 /**
- * The eight tracked fields.
+ * The seven tracked fields.
  * `tone` drives the pill colour: good / mixed / bad / unknown.
  * Unknown is never rendered as neutral-positive — it is its own visible state.
  */

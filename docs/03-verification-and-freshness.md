@@ -7,7 +7,7 @@ spend that time only where it changes something.
 
 1. **Collect** — record the policy pages that govern the product, per tier. Consumer and enterprise
    terms are frequently different documents.
-2. **Extract** — an LLM-assisted pass fills the eight fields. Output is a draft, never a publication.
+2. **Extract** — an LLM-assisted pass fills the seven fields. Output is a draft, never a publication.
 3. **Verify** — a human reads the source, confirms or corrects each field, and signs the row. Only now
    may a date be attached.
 4. **Watch** — a weekly hash check. A change queues re-extraction and re-verification; the date resets

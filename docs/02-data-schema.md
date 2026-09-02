@@ -5,7 +5,7 @@ verification labour, and verification labour is the actual cost of this business
 
 Source of truth: `src/data/schema.js` (definitions, options, filters) and `src/data/tools.js` (rows).
 
-## The eight fields
+## The seven fields
 
 | Field | Answers | Scored |
 |---|---|---|
