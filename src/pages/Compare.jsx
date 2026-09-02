@@ -1,25 +1,34 @@
 import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { TOOLS } from '../data/tools.js'
-import { SORTS, FILTER_BY_ID, CATEGORIES } from '../data/schema.js'
-import { rankTools, encodeState, decodeState } from '../lib/filters.js'
+import { applyFilters, encodeState, decodeState } from '../lib/filters.js'
+import { COMPARE_SORTS, groupAndSort } from '../lib/compare.js'
 import FilterRail from '../components/FilterRail.jsx'
-import Collapsible from '../components/Collapsible.jsx'
-import ToolCard from '../components/ToolCard.jsx'
-import Callout from '../components/Callout.jsx'
-import Pill from '../components/Pill.jsx'
 
+/**
+ * Compare — the full comparison, for people who want to go deeper.
+ *
+ * Reached from [Compare] in the nav, or "See all tools" from a result screen.
+ * It is not the homepage any more; the homepage asks a question, this page
+ * answers it across every tool at once.
+ *
+ * Grouping always wins over sorting. See groupAndSort in lib/compare.js.
+ */
 export default function Compare() {
   const [params, setParams] = useSearchParams()
   const state = decodeState(params)
-  const [copied, setCopied] = useState(false)
+  const [sort, setSort] = useState(state.sort === 'score' || state.sort === 'name' ? state.sort : 'coverage')
 
   const results = useMemo(
-    () => rankTools(TOOLS, { filters: state.filters, category: state.category, sort: state.sort }),
-    [state.filters, state.category, state.sort]
+    () => applyFilters(TOOLS, { filters: state.filters, category: state.category }),
+    [state.filters, state.category]
   )
 
-  const update = (next) => setParams(encodeState(next), { replace: true })
+  const { groups, unmapped } = useMemo(() => groupAndSort(results, sort), [results, sort])
+
+  // Sort lives in the URL with the filters, so a view can be copied out of the
+  // address bar and arrive looking exactly the same.
+  const update = (next) => setParams(encodeState({ ...next, sort }), { replace: true })
 
   const toggleFilter = (id) => {
     const filters = state.filters.includes(id)
@@ -28,142 +37,125 @@ export default function Compare() {
     update({ ...state, filters })
   }
 
-  const toggleCategory = (id) => {
-    const current = state.category ?? []
-    const category = current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
-    update({ ...state, category: category.length ? category : null })
-  }
+  const resetFilters = () => update({ ...state, filters: [] })
 
-  const share = async () => {
-    const url = `${window.location.origin}/compare?${encodeState(state)}`
-    try {
-      await navigator.clipboard.writeText(url)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {
-      setCopied(false)
-    }
-  }
+  const shown = groups.reduce((n, g) => n + g.rows.length, 0)
 
   return (
-    <div className="space-y-6">
-      <header className="max-w-3xl">
-        <h1 className="text-2xl sm:text-3xl font-semibold text-ink">Comparison</h1>
-        <p className="mt-2 text-ink-soft">
-          Every filter here is a plain predicate over the tracked fields. The chat on{' '}
-          <Link to="/discover" className="text-accent underline underline-offset-2">
-            Discover
-          </Link>{' '}
-          calls this exact page’s ranking function, so you can always check its work by hand.
+    <div>
+      <header className="max-w-2xl">
+        <h1 className="font-serif text-3xl leading-tight text-ink sm:text-4xl">
+          Compare every tool on what it does with your data
+        </h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+          Grouped by what happens to you — not by score. Sorting reorders inside a group and never
+          moves a tool into a different one.
         </p>
       </header>
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[260px_1fr]">
-        {/* On a phone the whole filter column folds away behind one row that
-            still reports how many filters are on, so the results stay visible
-            without scrolling past eleven checkboxes. */}
-        <Collapsible
-          title="Filters"
-          count={state.filters.length + (state.category?.length ?? 0)}
-          countLabel=" on"
-          className="space-y-4"
-          contentClassName="space-y-4"
-        >
+      <div className="mt-8 flex gap-8">
+        {/* Desktop rail. The mobile equivalent is a bottom sheet (see
+            FilterSheet) — same component, different container. */}
+        <aside className="hidden w-64 shrink-0 lg:block">
           <FilterRail
-            tools={TOOLS}
             active={state.filters}
             onToggle={toggleFilter}
-            onClear={() => update({ ...state, filters: [] })}
+            onReset={resetFilters}
+            idPrefix="rail"
           />
+        </aside>
 
-          <div className="rounded-lg border border-line bg-white p-4">
-            <h2 className="mb-2 text-sm font-semibold text-ink">Category</h2>
-            <div className="flex flex-wrap gap-1.5">
-              {Object.entries(CATEGORIES).map(([id, label]) => {
-                const on = (state.category ?? []).includes(id)
-                return (
-                  <button
-                    key={id}
-                    onClick={() => toggleCategory(id)}
-                    className={`rounded-full border px-2.5 py-1.5 text-xs sm:px-2 sm:py-1 ${
-                      on ? 'border-accent bg-accent-soft text-accent-ink' : 'border-line text-ink-soft hover:border-ink-faint'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </Collapsible>
-
-        <div>
-          <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-line bg-white px-4 py-3">
-            <p className="text-sm text-ink">
-              <strong className="tabular-nums">{results.length}</strong> of {TOOLS.length} tools match
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+            <p className="text-sm text-ink-soft">
+              <span className="font-medium text-ink">{shown}</span> of {TOOLS.length} tools
+              {state.filters.length ? ` · ${state.filters.length} filter${state.filters.length === 1 ? '' : 's'}` : ''}
             </p>
-            {state.filters.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {state.filters.map((id) => (
-                  <button key={id} onClick={() => toggleFilter(id)} title="Remove this filter">
-                    <Pill tone="accent" className="hover:line-through">
-                      {FILTER_BY_ID[id]?.label ?? id} ×
-                    </Pill>
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* Wraps, and the select is capped: a <select> will not shrink
-                below its longest option, so "Most recently verified" plus the
-                label and the copy button used to push past a phone screen. */}
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <label htmlFor="sort" className="text-xs text-ink-faint">
-                Sort
-              </label>
+
+            <label className="flex items-center gap-2 text-sm text-ink-soft">
+              Sort
               <select
-                id="sort"
-                value={state.sort}
-                onChange={(e) => update({ ...state, sort: e.target.value })}
-                className="min-h-[38px] max-w-[11rem] rounded-md border border-line bg-white px-2 py-1.5 text-xs text-ink sm:min-h-0 sm:max-w-none sm:py-1 sm:text-sm"
+                value={sort}
+                onChange={(e) => setSort(e.target.value)}
+                className="min-h-[44px] rounded-md border border-line bg-white px-2 text-sm text-ink"
               >
-                {SORTS.map((s) => (
+                {COMPARE_SORTS.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
                   </option>
                 ))}
               </select>
-              <button
-                onClick={share}
-                className="min-h-[38px] rounded-md border border-line px-2 py-1.5 text-xs text-ink-soft hover:border-ink-faint sm:min-h-0 sm:py-1"
-              >
-                {copied ? 'Link copied' : 'Copy link'}
-              </button>
-            </div>
+            </label>
           </div>
 
-          {results.length === 0 ? (
-            <Callout variant="warn" title="Nothing matches that combination">
-              That is a real answer, not a failure. Untick a filter to see what’s excluding
-              everything, or read{' '}
-              <Link to="/methodology" className="underline underline-offset-2">
-                why so many fields are unknown
-              </Link>
-              .
-            </Callout>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {results.map((t, i) => (
-                <ToolCard key={t.id} tool={t} rank={i + 1} compact />
-              ))}
-            </div>
-          )}
-
-          {results.length > 0 && (
-            <p className="mt-4 text-xs text-ink-faint">
-              Ranked by transparency score, then coverage. Every row is draft data; scores are
-              arithmetic over unverified fields, not a verdict on the company.
+          {/* A value stateForField cannot map is a bug in our schema. It is
+              reported, not filed under a group. */}
+          {unmapped.length > 0 ? (
+            <p
+              role="alert"
+              className="mt-4 rounded-lg border-2 border-dashed border-mixed/60 bg-mixed-soft p-3 text-sm text-mixed"
+            >
+              {unmapped.length} value{unmapped.length === 1 ? '' : 's'} we cannot classify:{' '}
+              {unmapped.join(', ')}. Not shown as &ldquo;unknown&rdquo; — that would blame a provider
+              for a gap in our own schema.
             </p>
-          )}
+          ) : null}
+
+          <div className="mt-6 space-y-8">
+            {groups.map((group) =>
+              /* An empty group disappears entirely rather than rendering a
+                 heading over nothing. */
+              group.rows.length === 0 ? null : (
+                <section key={group.id} aria-labelledby={`g-${group.id}`}>
+                  <h2 id={`g-${group.id}`} className="font-serif text-lg text-ink">
+                    {group.heading}
+                  </h2>
+                  <p className="mt-0.5 text-sm text-ink-faint">{group.sub}</p>
+
+                  <ul className="mt-3 space-y-2">
+                    {group.rows.map(({ tool }, i) => (
+                      <li
+                        key={tool.id}
+                        className="flex items-center gap-3 rounded-lg border border-line bg-white p-3"
+                      >
+                        <span className="w-6 shrink-0 text-right font-mono text-xs text-ink-faint">
+                          {i + 1}
+                        </span>
+                        <span
+                          aria-hidden="true"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-paper font-mono text-[11px] font-semibold text-ink-soft"
+                        >
+                          {tool.monogram ?? tool.name?.slice(0, 2)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-ink">
+                            <Link to={`/tools/${tool.id}`} className="hover:underline">
+                              {tool.name}
+                            </Link>
+                          </p>
+                          <p className="truncate text-xs text-ink-faint">
+                            {tool.category_label} · {tool.hq}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            )}
+          </div>
+
+          {shown === 0 ? (
+            <p className="mt-8 rounded-lg border border-line bg-white p-4 text-sm text-ink-soft">
+              No tool meets every filter you picked. Remove one to widen the results.
+            </p>
+          ) : null}
+
+          {/* Debug aid while the page is being built: the canonical order, and
+              which of it is currently populated. */}
+          <p className="sr-only">
+            Group order: {GROUPS.map((g) => g.heading).join(' · ')}
+          </p>
         </div>
       </div>
     </div>

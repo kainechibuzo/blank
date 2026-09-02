@@ -1,69 +1,60 @@
-import { FILTERS, FILTER_GROUPS } from '../data/schema.js'
-import { applyFilters } from '../lib/filters.js'
+import { COMPARE_FILTERS } from '../lib/compare.js'
 
 /**
- * Counts are computed against the current result set so a user can see, before
- * clicking, which filters will empty the page. Zero-match filters stay visible
- * and clickable — hiding them would hide the fact that nothing qualifies.
+ * FilterRail — the five things people actually care about.
+ *
+ * Checkboxes, because a filter is a yes/no about yourself, and a dropdown would
+ * make someone open a menu to answer a question they already know the answer to.
+ *
+ * Rendered once and placed either in a sidebar (desktop) or a bottom sheet
+ * (mobile), so the two can never drift into offering different filters.
  */
-export default function FilterRail({ tools, active, onToggle, onClear }) {
-  const counts = Object.fromEntries(
-    FILTERS.map((f) => [f.id, applyFilters(tools, { filters: [f.id] }).length])
-  )
+export default function FilterRail({ active, onToggle, onReset, idPrefix = 'f' }) {
+  const anyActive = active.length > 0
 
   return (
-    <aside className="rounded-lg border border-line bg-white p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink">Filters</h2>
-        {active.length > 0 && (
-          <button onClick={onClear} className="text-xs text-accent hover:underline">
-            Clear ({active.length})
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-ink-faint">
+          Only show tools where
+        </h2>
+        {/* Always visible when a filter is active: one click clears everything,
+            because hunting through five boxes to undo one thought is how people
+            end up looking at results they did not mean to ask for. */}
+        {anyActive ? (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex min-h-[44px] items-center text-sm text-accent hover:underline"
+          >
+            Reset filters
           </button>
-        )}
+        ) : null}
       </div>
 
-      <div className="space-y-4">
-        {FILTER_GROUPS.map((group) => (
-          <fieldset key={group}>
-            <legend className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
-              {group}
-            </legend>
-            <div className="space-y-1.5">
-              {FILTERS.filter((f) => f.group === group).map((f) => {
-                const checked = active.includes(f.id)
-                const n = counts[f.id]
-                return (
-                  <label
-                    key={f.id}
-                    title={f.help}
-                    className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-2.5 text-sm transition-colors sm:items-start sm:py-1.5 ${
-                      checked ? 'bg-accent-soft' : 'hover:bg-paper'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => onToggle(f.id)}
-                      className="mt-0.5 h-3.5 w-3.5 accent-accent"
-                    />
-                    <span className="flex-1 leading-snug">
-                      <span className={checked ? 'font-medium text-accent-ink' : 'text-ink'}>{f.label}</span>
-                      <span className={`ml-1 font-mono text-[11px] ${n === 0 ? 'text-bad' : 'text-ink-faint'}`}>
-                        {n}
-                      </span>
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-          </fieldset>
-        ))}
-      </div>
-
-      <p className="mt-4 border-t border-line pt-3 text-[11px] leading-relaxed text-ink-faint">
-        Filters are additive: a tool must satisfy every box you tick. Numbers show how many of the{' '}
-        {tools.length} tracked tools currently qualify.
-      </p>
-    </aside>
+      <ul className="mt-2 space-y-1">
+        {COMPARE_FILTERS.map((f) => {
+          const id = `${idPrefix}-${f.id}`
+          const on = active.includes(f.id)
+          return (
+            <li key={f.id}>
+              <label
+                htmlFor={id}
+                className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-md px-1 hover:bg-line/20"
+              >
+                <input
+                  id={id}
+                  type="checkbox"
+                  checked={on}
+                  onChange={() => onToggle(f.id)}
+                  className="h-5 w-5 shrink-0 rounded border-line-strong accent-accent"
+                />
+                <span className="text-[15px] text-ink">{f.label}</span>
+              </label>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
