@@ -506,6 +506,10 @@ export async function runSourceChecks() {
     'src/pages/Methodology.jsx',
     'src/pages/Directory.jsx',
     'src/pages/SubmitListing.jsx',
+    /* The old researcher dashboard. It is replaced by the Phase 2 homepage in
+       the next commit, at which point it leaves this list and the no-score
+       check below becomes live for it. */
+    'src/pages/Home.jsx',
   ]
 
   // A bare score is a number interpolated into JSX text. `score={76}` is a
@@ -529,6 +533,52 @@ export async function runSourceChecks() {
     scoreRenderers.length
       ? `bare score in ${scoreRenderers.join(', ')}`
       : `score and coverage render together or not at all (${AWAITING_FACTPAIR.length} legacy files still owe a migration)`
+  )
+
+  /* 17 — The homepage and the result screen carry no score at all.
+
+          Not "no bare score" — no score. These are the two screens built for
+          someone who has never read a terms of service, and a number there
+          answers a question they did not ask while burying the one they did.
+          Constraint 2 of the Phase 2 brief: the check exists before the pages
+          do, so the pages are written against it rather than the other way
+          round. */
+  const NO_SCORE_PAGES = {
+    'src/pages/Home.jsx': 'homepage',
+    'src/pages/Result.jsx': 'result screen',
+  }
+  const scoreLeaks = []
+  const scorePending = []
+  let live = 0
+  for (const [rel, what] of Object.entries(NO_SCORE_PAGES)) {
+    // The old researcher dashboard still sits at Home.jsx. It is exempt only
+    // while it is listed in AWAITING_FACTPAIR above; the commit that lands the
+    // Phase 2 homepage takes it off that list, and this guard goes live on the
+    // same commit rather than at some later cleanup.
+    if (AWAITING_FACTPAIR.includes(rel)) {
+      scorePending.push(what)
+      continue
+    }
+    let body
+    try {
+      body = await read(rel)
+    } catch {
+      continue // not written yet
+    }
+    live += 1
+    const code = stripComments(body)
+    if (/FactPair/.test(code)) scoreLeaks.push(`${what} imports FactPair`)
+    if (/\bscore\b/i.test(code)) scoreLeaks.push(`${what} mentions a score`)
+  }
+
+  push(
+    'The homepage and result screen carry no score number',
+    scoreLeaks.length === 0,
+    scoreLeaks.length
+      ? scoreLeaks.join('; ')
+      : scorePending.length
+        ? `${live} live, ${scorePending.length} still the old dashboard (${scorePending.join(', ')}) — goes live when rewritten`
+        : `${live} of ${Object.keys(NO_SCORE_PAGES).length} pages written; neither mentions a score`
   )
 
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
