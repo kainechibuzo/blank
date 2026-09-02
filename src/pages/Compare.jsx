@@ -2,10 +2,13 @@ import { useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { TOOLS } from '../data/tools.js'
 import { applyFilters, encodeState, decodeState } from '../lib/filters.js'
+import { FIELD_ORDER } from '../data/schema.js'
 import { COMPARE_SORTS, groupAndSort } from '../lib/compare.js'
 import FilterRail from '../components/FilterRail.jsx'
 import ComparisonRow from '../components/ComparisonRow.jsx'
 import DescribeBox from '../components/DescribeBox.jsx'
+import FilterSheet from '../components/FilterSheet.jsx'
+import { assess } from '../lib/consequence.js'
 
 /**
  * Compare — the full comparison, for people who want to go deeper.
@@ -27,11 +30,21 @@ export default function Compare() {
   /* Which filters came from free text, and the phrase that produced each one,
      so the row of chips can say why it is there. */
   const [derived, setDerived] = useState({})
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  const results = useMemo(
-    () => applyFilters(TOOLS, { filters: state.filters, category: state.category }),
-    [state.filters, state.category]
-  )
+  /* A filter is a claim about what a policy says. An unread row cannot support
+     one — its values are seeded guesses, and matching on them would report a
+     tool as satisfying "my data isn't used for training" when nobody has read
+     whether it does. Same bug as the coverage one, one layer down: the fix was
+     to stop scoring unread fields, and the fix here is to stop filtering on
+     them. */
+  const isUnreadRow = (tool) => assess(tool, { leads: FIELD_ORDER }).group === 'unread'
+  const unreadTotal = useMemo(() => TOOLS.filter(isUnreadRow).length, [])
+
+  const results = useMemo(() => {
+    const pool = state.filters.length ? TOOLS.filter((t) => !isUnreadRow(t)) : TOOLS
+    return applyFilters(pool, { filters: state.filters, category: state.category })
+  }, [state.filters, state.category])
 
   const { groups, unmapped } = useMemo(() => groupAndSort(results, sort), [results, sort])
 
@@ -63,7 +76,16 @@ export default function Compare() {
     update({ ...state, filters: state.filters.filter((x) => x !== id) })
   }
 
-  const shown = groups.reduce((n, g) => n + g.rows.length, 0)
+  /* Unread rows are the honest majority of the dataset, and on this page they
+     would bury everything else. They collapse behind a disclosure, and when any
+     filter is on they leave the results entirely — a filter is a claim about
+     what a policy says, and an unread row cannot support one. The count stays
+     visible either way. */
+  const filtersActive = state.filters.length > 0
+  const visibleGroups = groups.filter(
+    (g) => g.rows.length > 0 && !(filtersActive && g.id === 'unread')
+  )
+  const shown = visibleGroups.reduce((n, g) => n + g.rows.length, 0)
 
   return (
     <div>
@@ -90,6 +112,24 @@ export default function Compare() {
         </aside>
 
         <div className="min-w-0 flex-1">
+          {/* Pinned above the sort control, and only where the sidebar is
+              absent: one tap to the sheet, and it never competes with the
+              results for space. */}
+          <div className="mb-3 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-md border border-line bg-white px-4 text-sm font-medium text-ink"
+            >
+              Filters
+              {state.filters.length ? (
+                <span className="rounded-full bg-ink px-2 py-0.5 text-xs text-white">
+                  {state.filters.length}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
             <p className="text-sm text-ink-soft">
               <span className="font-medium text-ink">{shown}</span> of {TOOLS.length} tools
@@ -133,16 +173,36 @@ export default function Compare() {
           ) : null}
 
           <div className="mt-6 space-y-8">
-            {groups.map((group) =>
-              /* An empty group disappears entirely rather than rendering a
-                 heading over nothing. */
-              group.rows.length === 0 ? null : (
-                <section key={group.id} aria-labelledby={`g-${group.id}`}>
-                  <h2 id={`g-${group.id}`} className="font-serif text-lg text-ink">
-                    {group.heading}
-                  </h2>
-                  <p className="mt-0.5 text-sm text-ink-faint">{group.sub}</p>
+            {visibleGroups.map((group) => (
+              <section key={group.id} aria-labelledby={`g-${group.id}`}>
+                <h2 id={`g-${group.id}`} className="font-serif text-lg text-ink">
+                  {group.heading}
+                </h2>
+                <p className="mt-0.5 text-sm text-ink-faint">{group.sub}</p>
 
+                {/* The unread group collapses. Fourteen rows of "we haven't
+                    looked" would otherwise be most of the page, but the count
+                    is the headline, so it is still the most visible thing about
+                    the group. */}
+                {group.id === 'unread' ? (
+                  <details className="mt-3">
+                    <summary className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 text-sm text-ink-soft hover:text-ink">
+                      <span aria-hidden="true">▶</span>
+                      {group.rows.length} tools not yet read (show)
+                    </summary>
+                    <ul className="mt-3 space-y-2">
+                      {group.rows.map(({ tool }, i) => (
+                        <ComparisonRow
+                          key={tool.id}
+                          tool={tool}
+                          rank={i + 1}
+                          expanded={openId === tool.id}
+                          onToggle={() => setOpenId(openId === tool.id ? null : tool.id)}
+                        />
+                      ))}
+                    </ul>
+                  </details>
+                ) : (
                   <ul className="mt-3 space-y-2">
                     {group.rows.map(({ tool }, i) => (
                       <ComparisonRow
@@ -154,9 +214,18 @@ export default function Compare() {
                       />
                     ))}
                   </ul>
-                </section>
-              )
-            )}
+                )}
+              </section>
+            ))}
+
+            {/* Why the count dropped: a filter is a claim about what a policy
+                says, and an unread row cannot support one. */}
+            {filtersActive && unreadTotal > 0 ? (
+              <p className="mt-6 rounded-lg border border-line bg-white p-3 text-sm text-ink-soft">
+                {unreadTotal} tool{unreadTotal === 1 ? ' hasn’t' : 's haven’t'} been read yet and
+                aren&rsquo;t shown when filters are active.
+              </p>
+            ) : null}
           </div>
 
           {shown === 0 ? (
@@ -166,6 +235,15 @@ export default function Compare() {
           ) : null}
         </div>
       </div>
+
+      <FilterSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        active={state.filters}
+        onToggle={toggleFilter}
+        onReset={resetFilters}
+        resultCount={shown}
+      />
     </div>
   )
 }
