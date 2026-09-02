@@ -24,7 +24,7 @@ export default function SiteFooter() {
         <p className="text-xs leading-relaxed text-ink-faint">
           {toolCount} major AI tools · {FIELD_ORDER.length} facts each · read from their own policies ·{' '}
           {rowsRead < toolCount ? `${rowsRead} of ${toolCount} rows read so far · ` : ''}
-          last batch read {formatDate(lastReadOn)} · not legal advice ·{' '}
+          last batch read {lastReadOn ? formatDate(lastReadOn) : 'not yet'} · not legal advice ·{' '}
           <Link to="/methodology" className="underline underline-offset-2 hover:text-ink">
             methodology
           </Link>

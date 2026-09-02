@@ -76,6 +76,28 @@ export default function ToolPage() {
           />
         </div>
       </div>
+
+      {/* ── BLOCK 2 — the short version ────────────────────────────────── */}
+      <section className="mt-10">
+        <h2 className="font-serif text-2xl text-ink">The short version</h2>
+
+        {tool.short_version ? (
+          <p className="mt-3 text-lg leading-relaxed text-ink">{tool.short_version}</p>
+        ) : (
+          /* Not a blank, and not a placeholder box. The reader is told plainly
+             that the summary is missing and pointed at the facts, which are
+             there and sourced. */
+          <p className="mt-3 rounded-lg border border-dashed border-line bg-white p-4 text-sm leading-relaxed text-ink-soft">
+            Plain-English summary coming — read the {wordForNumber(FIELD_ORDER.length)} facts below
+            for now.
+          </p>
+        )}
+      </section>
     </article>
   )
+}
+
+/** Spelled out, because "read the 7 facts below" reads like a typo. */
+function wordForNumber(n) {
+  return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][n] ?? String(n)
 }

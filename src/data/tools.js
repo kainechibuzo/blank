@@ -47,10 +47,14 @@ const unverified = () => ({
  * @param {string} o.hq            plain-English home jurisdiction
  * @param {string} o.url           product homepage
  * @param {string} o.blurb         one line on what the product IS (not its policy)
- * @param {object} o.fields        the eight tracked fields
+ * @param {string} [o.short_version] two or three sentences of plain English on
+ *                                  what the policy means, hand-written, never
+ *                                  generated from the field values. Absent
+ *                                  until a person writes it.
+ * @param {object} o.fields        the seven tracked fields
  * @param {Array}  o.policy_sources  pages a reviewer must read
  */
-function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fields, policy_sources, verification }) {
+function tool({ id, name, vendor, category, hq, url, blurb, short_version = null, monogram, accent, fields, policy_sources, verification }) {
   return {
     id,
     name,
@@ -60,6 +64,11 @@ function tool({ id, name, vendor, category, hq, url, blurb, monogram, accent, fi
     hq,
     url,
     blurb,
+    /* Hand-written per tool, and null until somebody writes it. The tool page
+       renders an honest empty state rather than assembling a summary out of
+       field values, because a generated sentence inherits every mistake in the
+       mapping and hides it behind fluent English. */
+    short_version,
     monogram: monogram || name.slice(0, 2).toUpperCase(),
     accent: accent || '#0b6b63',
     fields,
@@ -82,6 +91,7 @@ export const TOOLS = [
 
   tool({
     id: 'chatgpt',
+    short_version: 'ChatGPT can use your chats to make its models better. That is on unless you turn it off in Settings. People may read chats in some cases, and you can delete your own chats at any time.',
     name: 'ChatGPT',
     vendor: 'OpenAI',
     category: 'assistant',
@@ -145,6 +155,7 @@ export const TOOLS = [
 
   tool({
     id: 'claude',
+    short_version: 'Claude does not learn from your chats unless you choose to let it. People may read conversations in limited cases, for example if something gets flagged. You can delete your own chats.',
     name: 'Claude',
     vendor: 'Anthropic',
     category: 'assistant',
@@ -208,6 +219,7 @@ export const TOOLS = [
 
   tool({
     id: 'gemini',
+    short_version: 'Google says people may read your conversations, and there is no setting that turns this off. Turning off activity saving does not stop Google using chats to improve its services. You can delete your chats yourself.',
     name: 'Gemini',
     vendor: 'Google',
     category: 'assistant',
@@ -268,6 +280,7 @@ export const TOOLS = [
 
   tool({
     id: 'perplexity',
+    short_version: 'We could not find how Perplexity uses chats for training, how long it keeps them, or whether people read them — their policy does not say. You can ask them to delete your data, rather than doing it yourself.',
     name: 'Perplexity',
     vendor: 'Perplexity AI',
     category: 'search',
@@ -421,6 +434,7 @@ export const TOOLS = [
 
   tool({
     id: 'grok',
+    short_version: 'Grok can use your chats to train its models, and we found no way to turn that off. Its policy says conversations are deleted within 30 days. We could not find whether people read your chats.',
     name: 'Grok',
     vendor: 'xAI',
     category: 'assistant',
@@ -481,6 +495,7 @@ export const TOOLS = [
 
   tool({
     id: 'le-chat',
+    short_version: 'Le Chat can learn from your chats unless you turn that off in Settings. People may read conversations in limited cases. You can delete your own chats.',
     name: 'Le Chat',
     vendor: 'Mistral AI',
     category: 'assistant',
