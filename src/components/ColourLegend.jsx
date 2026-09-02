@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { STATES } from '../lib/field-states.js'
 
 /**
@@ -48,6 +49,18 @@ export default function ColourLegend() {
           )
         })}
       </ul>
+
+      {/* The legend tells you what the colours mean. This is where you go to
+          find out what the colours are for — what we read, how we scored it,
+          and what a state does and does not claim. */}
+      <div className="mx-auto mt-2 max-w-3xl">
+        <Link
+          to="/methodology"
+          className="inline-flex min-h-[44px] items-center text-xs font-medium text-accent hover:underline"
+        >
+          What do these mean?
+        </Link>
+      </div>
     </div>
   )
 }

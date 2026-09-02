@@ -36,3 +36,13 @@ export const PLAIN_FIELDS = FIELD_ORDER.map((key) => ({ key, label: plainLabel(k
  * are the ones people are actually asking about.
  */
 export const KEY_FIELDS = ['trains_on_data', 'human_review']
+
+/**
+ * Spelled out, because "read the 7 facts below" reads like a typo, and because
+ * the number of fields is a claim the site makes about itself in several places
+ * at once. One helper, so the tool page and the methodology page can never
+ * disagree about how many facts there are.
+ */
+export function wordForNumber(n) {
+  return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][n] ?? String(n)
+}

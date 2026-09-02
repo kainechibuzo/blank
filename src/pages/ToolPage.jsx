@@ -6,7 +6,7 @@ import { toolLastReadOn } from '../lib/dataset-summary.js'
 import { formatDate } from '../lib/format.js'
 import ScoreBar from '../components/ScoreBar.jsx'
 import FactRow from '../components/FactRow.jsx'
-import { PLAIN_FIELDS } from '../lib/plain-labels.js'
+import { PLAIN_FIELDS, wordForNumber } from '../lib/plain-labels.js'
 import NotFound from './NotFound.jsx'
 
 /**
@@ -173,12 +173,13 @@ export default function ToolPage() {
         <p className="mt-4 text-sm text-ink-soft">
           Last read: {lastRead ? formatDate(lastRead) : 'not yet'}
         </p>
+
+        <p className="mt-2">
+          <Link to="/methodology" className="text-sm font-medium text-accent hover:underline">
+            How we read and score these →
+          </Link>
+        </p>
       </footer>
     </article>
   )
-}
-
-/** Spelled out, because "read the 7 facts below" reads like a typo. */
-function wordForNumber(n) {
-  return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'][n] ?? String(n)
 }
