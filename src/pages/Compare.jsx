@@ -150,12 +150,6 @@ export default function Compare() {
               No tool meets every filter you picked. Remove one to widen the results.
             </p>
           ) : null}
-
-          {/* Debug aid while the page is being built: the canonical order, and
-              which of it is currently populated. */}
-          <p className="sr-only">
-            Group order: {GROUPS.map((g) => g.heading).join(' · ')}
-          </p>
         </div>
       </div>
     </div>
