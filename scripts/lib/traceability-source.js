@@ -483,6 +483,71 @@ export async function runSourceChecks() {
       : `${Object.keys(readings).length} rows in verified-rows.json match the dataset field for field`
   )
 
+  /* 16 — A score never travels alone.
+
+          The rebuild rule: only <FactPair /> may render a score number, and it
+          renders coverage and the read fraction beside it. A score on its own
+          looks like a verdict, and 59 on a fully-read row is not the same
+          claim as 59 on a row where four of seven fields were read. */
+  const pageFiles = (await walk('src/pages')).concat(await walk('src/components'))
+  const pageBodies = await Promise.all(pageFiles.map((rel) => read(rel).catch(() => '')))
+
+  /**
+   * Files that still render a bare score because they have not been rebuilt
+   * yet. Listed by name so the debt is visible and shrinking, and so a NEW
+   * bare score anywhere else fails immediately. Every entry here is owed a
+   * migration to <FactPair /> in Phases 2–5.
+   */
+  const AWAITING_FACTPAIR = [
+    'src/components/ScoreDial.jsx',
+    'src/components/ToolCard.jsx',
+    'src/pages/Home.jsx',
+    'src/pages/Discover.jsx',
+    'src/pages/Methodology.jsx',
+    'src/pages/Directory.jsx',
+    'src/pages/SubmitListing.jsx',
+  ]
+
+  // A bare score is a number interpolated into JSX text. `score={76}` is a
+  // prop, not a rendering, so lines carrying `score=` are not violations.
+  const scoreRenderers = pageFiles.filter((rel, i) => {
+    if (rel === 'src/components/FactPair.jsx') return false
+    if (AWAITING_FACTPAIR.includes(rel)) return false
+    return stripComments(pageBodies[i])
+      .split('\n')
+      .some(
+        (line) =>
+          /\{[^}]*\bscore\b[^}]*\}/i.test(line) &&
+          !/\bscore\s*=/.test(line) && // a prop, e.g. score={76}
+          !/\bscore\s*:/.test(line) // an object literal, e.g. { score: s.score }
+      )
+  })
+
+  push(
+    'No component renders a score number outside FactPair',
+    scoreRenderers.length === 0,
+    scoreRenderers.length
+      ? `bare score in ${scoreRenderers.join(', ')}`
+      : `score and coverage render together or not at all (${AWAITING_FACTPAIR.length} legacy files still owe a migration)`
+  )
+
+  const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
+  const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
+
+  push(
+    'FieldState ends every fact with provenance or an admission',
+    /No source read yet/.test(fsSrc) && /Source ↗|Source \u2197/.test(fsSrc),
+    'a field with no source says so, rather than rendering as a fact'
+  )
+
+  push(
+    'No red on a policy fact — three colours only',
+    !/tone[=:]\s*['"]bad['"]/.test(fsSrc) &&
+      !/text-bad/.test(fsSrc) &&
+      /NEEDS_DECISION/.test(fsLib),
+    'green safe, yellow act, grey unknown-or-unread; unwelcome findings surface as NEEDS_DECISION, never as a colour'
+  )
+
   push(
     'The same person cannot claim the same site twice',
     /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(

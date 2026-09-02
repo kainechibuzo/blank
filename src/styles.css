@@ -87,4 +87,13 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  /* A score on a row we have not finished reading. Outlined rather than solid,
+     so a half-read row cannot look as settled as a fully-read one at a glance.
+     Two pixels, not one — at 24px a hairline outline reads as a rendering
+     fault rather than a decision. */
+  .score-outline {
+    color: transparent;
+    -webkit-text-stroke: 2px var(--color-ink-faint);
+  }
 }

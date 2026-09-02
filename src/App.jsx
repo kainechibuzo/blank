@@ -12,6 +12,7 @@ import Account from './pages/Account.jsx'
 import Admin from './pages/Admin.jsx'
 import Sponsors from './pages/Sponsors.jsx'
 import NotFound from './pages/NotFound.jsx'
+import DevStates from './pages/DevStates.jsx'
 
 export default function App() {
   return (
@@ -28,6 +29,8 @@ export default function App() {
         <Route path="/account" element={<Account />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/sponsors" element={<Sponsors />} />
+        {/* Component sheet. Never linked from the navigation. */}
+        <Route path="/dev/states" element={<DevStates />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
