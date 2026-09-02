@@ -37,38 +37,99 @@ function renderField(key, f) {
 
 let src = await readFile(FILE, 'utf8')
 
-for (const [id, block] of Object.entries(spec)) {
-  const idAt = src.indexOf(`id: '${id}',`)
-  if (idAt < 0) throw new Error(`tool ${id} not found`)
+/**
+ * The bounds of one tool object. Every edit below is scoped to these.
+ *
+ * The first version searched forward from the tool's id for the sentinel
+ * strings and happily walked into the NEXT tool when a sentinel was missing —
+ * which is how Grok's row overwrote Le Chat's verification block. Grok used
+ * the compact `verification: unverified(),` form, so the search for
+ * `verification: {` ran straight past it.
+ */
+function blockOf(src, id) {
+  const start = src.indexOf(`id: '${id}',`)
+  if (start < 0) throw new Error(`tool ${id} not found`)
+  const next = src.indexOf("\n    id: '", start + 10)
+  return { start, end: next > 0 ? next : src.length }
+}
 
+/** Replace `verification: {…},` OR the one-line `verification: unverified(),`. */
+/** Index just past the `},` line that closes the block opened at `open`. */
+function endOfBlockLine(seg, open) {
+  let depth = 0
+  let i = seg.indexOf('{', open)
+  for (; i < seg.length; i++) {
+    if (seg[i] === '{') depth++
+    else if (seg[i] === '}') {
+      depth--
+      if (depth === 0) {
+        i++
+        break
+      }
+    }
+  }
+  if (seg[i] === ',') i++
+  const nl = seg.indexOf('\n', i)
+  return nl < 0 ? seg.length : nl + 1
+}
+
+/**
+ * Put the verdict into the tool object, replacing any existing verification.
+ *
+ * Handles three shapes, because the file has all three:
+ *   - `verification: { ... },`   a tool that has been read before
+ *   - `verification: unverified(),`   the compact helper
+ *   - no verification key at all — the tool() factory defaults it. That is the
+ *     case for every row not yet read, and it is the one the first version of
+ *     this script walked straight past, which is how one row's verdict came to
+ *     be written into another row's object.
+ */
+function ensureVerification(seg, rendered) {
+  const key = '    verification: '
+  const at = seg.indexOf(key)
+  if (at < 0) {
+    const fOpen = seg.indexOf('    fields: {')
+    if (fOpen < 0) throw new Error('fields block not found to insert after')
+    const after = endOfBlockLine(seg, fOpen)
+    return `${seg.slice(0, after)}${rendered}\n${seg.slice(after)}`
+  }
+  const end = seg[at + key.length] === '{' ? endOfBlockLine(seg, at) : seg.indexOf('\n', at) + 1
+  return seg.slice(0, at) + rendered + seg.slice(end)
+}
+
+for (const [id, block] of Object.entries(spec)) {
+  const { start, end } = blockOf(src, id)
+  let seg = src.slice(start, end)
+
+  // ── fields ───────────────────────────────────────────────────────────────
   for (const [key, f] of Object.entries(block)) {
     if (key.startsWith('_')) continue
-    const fieldsAt = src.indexOf('    fields: {', idAt)
-    const endAt = src.indexOf('    verification: {', fieldsAt)
-    const open = src.indexOf(`      ${key}: {`, fieldsAt)
-    if (open < 0 || open > endAt) throw new Error(`${id}.${key} not found`)
-    // close = next line that is exactly "      }," at the field indent
-    let close = src.indexOf('\n      },', open)
-    if (close < 0 || close > endAt) throw new Error(`${id}.${key} unterminated`)
-    src = `${src.slice(0, open)}${renderField(key, f)}${src.slice(close + '\n      },'.length)}`
+    const open = seg.indexOf(`      ${key}: {`)
+    if (open < 0) throw new Error(`${id}.${key} not found`)
+    const close = seg.indexOf('\n      },', open)
+    if (close < 0) throw new Error(`${id}.${key} unterminated`)
+    seg = `${seg.slice(0, open)}${renderField(key, f)}${seg.slice(close + '\n      },'.length)}`
   }
 
-  const vStart = src.indexOf('    verification: {', src.indexOf(`id: '${id}',`))
-  const vEnd = src.indexOf('    policy_sources:', vStart)
+  // ── verdict ──────────────────────────────────────────────────────────────
   const note =
     block._verdict === 'verified'
       ? 'All seven fields read and confirmed against the linked pages.'
       : `Fields carrying a source were read and confirmed on ${DATE}. ${
           block._unverified?.length ? `Not established in this pass: ${block._unverified.join(', ')}.` : ''
         }`
-  src = `${src.slice(0, vStart)}    verification: {
+  seg = ensureVerification(
+    seg,
+    `    verification: {
       status: '${block._verdict}',
       last_verified: '${DATE}',
       reviewer: 'policy pages read on the recorded date',
       method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
       note: '${note}',
-    },
-${src.slice(vEnd)}`
+    },`
+  )
+
+  src = `${src.slice(0, start)}${seg}${src.slice(end)}`
 }
 
 await writeFile(FILE, src, 'utf8')

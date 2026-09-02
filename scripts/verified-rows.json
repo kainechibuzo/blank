@@ -155,5 +155,71 @@
       "source": "https://legal.mistral.ai/terms/privacy-policy",
       "note": "Business use sits outside this policy: the customer is the controller and Mistral the processor. The API is also given its own retention rules, including an abuse-monitoring window of 30 rolling days that can be switched off with zero data retention. No blanket no-training promise for API data was read for this row."
     }
+  },
+  "gemini": {
+    "_verdict": "partially-verified",
+    "_unverified": [
+      "residency",
+      "free_tier"
+    ],
+    "trains_on_data": {
+      "value": "opt-out-available",
+      "source": "https://support.google.com/gemini/answer/13594961",
+      "note": "A setting controls whether your chats are used to improve Google AI. The important carve-out: Google states your Gemini settings do not control processing of your chats to create anonymised data used to improve Google services, so turning the setting off does not stop your chats improving Google products in that form."
+    },
+    "human_review": {
+      "value": "yes",
+      "source": "https://support.google.com/gemini/answer/13594961",
+      "note": "Stated plainly: even with the Keep Activity setting off, Google still uses chats to respond and to help protect Google, its users and the public, including with help from human reviewers. Chats that human reviewers have seen are then kept up to three years and are not deleted when you delete your activity."
+    },
+    "retention": {
+      "value": "stated",
+      "source": "https://support.google.com/gemini/answer/13594961",
+      "note": "Auto-delete defaults to 18 months and can be changed to 3 months, 36 months or indefinite, and chats can be deleted by hand at any time. The exception is the one worth knowing: chats reviewed by human reviewers, plus related data such as language, device type, location and feedback, survive deletion and are kept up to three years."
+    },
+    "deletion": {
+      "value": "self-serve",
+      "source": "https://support.google.com/gemini/answer/13594961",
+      "note": "Gemini Apps chats can be deleted manually at any time and activity can be exported through Google Takeout. Deleting Gemini activity does not delete data held by other Google services, and chats seen by human reviewers are retained regardless."
+    },
+    "enterprise_api": {
+      "value": "separate",
+      "source": "https://support.google.com/gemini/answer/13594961",
+      "note": "Google states that a work or school Google Account may be subject to different data handling terms, documented separately in the Generative AI in Google Workspace privacy hub. The consumer notice read here does not govern those accounts."
+    }
+  },
+  "grok": {
+    "_verdict": "partially-verified",
+    "_unverified": [
+      "trains_on_data",
+      "human_review",
+      "free_tier"
+    ],
+    "retention": {
+      "value": "stated",
+      "source": "https://x.ai/legal/privacy-policy",
+      "note": "The general rule is an ongoing legitimate business need with no fixed clock. Two concrete periods are given: Private Chat conversations are deleted from SpaceXAI systems within 30 days, and anything you delete — individual conversations or the whole account — goes within 30 days. Both allow longer retention for legal, compliance or safety reasons."
+    },
+    "deletion": {
+      "value": "self-serve",
+      "source": "https://x.ai/legal/privacy-policy",
+      "note": "You can delete individual conversations or the whole account from within the service, and the policy commits to deletion within 30 days. Some rights have to go through the privacy portal instead, and the policy warns it cannot guarantee factual accuracy of model output about you."
+    },
+    "residency": {
+      "value": {
+        "hq_jurisdiction": "US",
+        "eu_option": false,
+        "regions": [
+          "US"
+        ]
+      },
+      "source": "https://x.ai/legal/privacy-policy",
+      "note": "SpaceXAI describes itself as a US-based company and the policy has a separate Europe addendum for EEA, UK and Swiss residents. Where data is stored or processed was not stated on the pages read. Note also that using Grok through X is governed by X's privacy policy, not this one."
+    },
+    "enterprise_api": {
+      "value": "separate",
+      "source": "https://x.ai/legal/privacy-policy",
+      "note": "The consumer privacy policy explicitly does not apply to data processed on behalf of business customers, including the SpaceXAI API, which is documented in separate enterprise material. Use through a third party such as X falls under that third party's policy instead."
+    }
   }
 }

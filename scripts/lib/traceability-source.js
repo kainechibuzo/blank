@@ -436,6 +436,53 @@ export async function runSourceChecks() {
     unsourced.length ? `no source for ${unsourced.map((t) => t.id).join(', ')}` : 'no row exists without a link to the page it came from'
   )
 
+  /* 15 — The readings are applied to the rows they belong to.
+
+          scripts/apply-verified-rows.mjs copies scripts/verified-rows.json
+          into the dataset by string surgery, and an earlier version of it
+          walked past a tool that had no verification key and wrote that row's
+          verdict into the NEXT tool's object. The dataset still parsed, all
+          twenty tools still had seven fields, and the build was green.
+
+          So: read the spec and the dataset and require them to agree. */
+  const readings = JSON.parse(await read('scripts/verified-rows.json'))
+  const misapplied = []
+  for (const [id, block] of Object.entries(readings)) {
+    const tool = TOOLS_FOR_SOURCES.find((t) => t.id === id)
+    if (!tool) {
+      misapplied.push(`${id}: no such tool`)
+      continue
+    }
+    if (tool.verification.status !== block._verdict) {
+      misapplied.push(`${id}: status ${tool.verification.status} != ${block._verdict}`)
+    }
+    for (const [key, f] of Object.entries(block)) {
+      if (key.startsWith('_')) continue
+      const field = tool.fields?.[key]
+      if (!field) {
+        misapplied.push(`${id}.${key} missing`)
+      } else if (field.source !== f.source) {
+        misapplied.push(`${id}.${key}: source not applied`)
+      } else if (f.value && typeof f.value === 'object') {
+        // residency carries its keys flat (hq_jurisdiction / eu_option /
+        // regions) rather than under a `value`, so compare them one by one.
+        for (const [k, v] of Object.entries(f.value)) {
+          if (JSON.stringify(field[k]) !== JSON.stringify(v)) misapplied.push(`${id}.${key}.${k} not applied`)
+        }
+      } else if (field.value !== f.value) {
+        misapplied.push(`${id}.${key}: value not applied`)
+      }
+    }
+  }
+
+  push(
+    'Every recorded reading is applied to the row it belongs to',
+    misapplied.length === 0,
+    misapplied.length
+      ? misapplied.join('; ')
+      : `${Object.keys(readings).length} rows in verified-rows.json match the dataset field for field`
+  )
+
   push(
     'The same person cannot claim the same site twice',
     /listings_one_per_owner_per_site/.test(aduoSql) && /site_key/.test(

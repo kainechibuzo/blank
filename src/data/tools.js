@@ -135,8 +135,7 @@ export const TOOLS = [
       reviewer: 'policy pages read on the recorded date',
       method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
       note: 'All seven fields read and confirmed against the linked pages.',
-    },
-    policy_sources: [
+    },    policy_sources: [
       { label: 'US privacy policy', url: 'https://openai.com/policies/privacy-policy/' },
       { label: 'Help: how your data is used to improve model performance', url: 'https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance' },
       { label: 'Enterprise privacy', url: 'https://openai.com/enterprise-privacy/' },
@@ -198,8 +197,7 @@ export const TOOLS = [
       reviewer: 'policy pages read on the recorded date',
       method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
       note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: residency.',
-    },
-    policy_sources: [
+    },    policy_sources: [
       { label: 'Privacy policy', url: 'https://www.anthropic.com/legal/privacy' },
       { label: 'Privacy centre: how long data is stored', url: 'https://privacy.anthropic.com/en/articles/10023548-how-long-do-you-store-personal-data' },
       { label: 'Privacy centre: personal data in model training', url: 'https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training' },
@@ -221,19 +219,23 @@ export const TOOLS = [
     fields: {
       trains_on_data: {
         value: 'opt-out-available',
-        note: 'With Keep Activity on, which is the default, Google uses your activity to develop and improve services including training generative AI models. Turning the setting off, or using temporary chats, stops future chats being used for training unless you choose to send feedback.',
+        source: 'https://support.google.com/gemini/answer/13594961',
+        note: 'A setting controls whether your chats are used to improve Google AI. The important carve-out: Google states your Gemini settings do not control processing of your chats to create anonymised data used to improve Google services, so turning the setting off does not stop your chats improving Google products in that form.',
       },
       human_review: {
         value: 'yes',
-        note: 'Google states that human reviewers, including trained reviewers from its service providers, review some of the data, and that this continues even when Keep Activity is off. Reviewed data is disconnected from your account and kept for up to three years.',
+        source: 'https://support.google.com/gemini/answer/13594961',
+        note: 'Stated plainly: even with the Keep Activity setting off, Google still uses chats to respond and to help protect Google, its users and the public, including with help from human reviewers. Chats that human reviewers have seen are then kept up to three years and are not deleted when you delete your activity.',
       },
       retention: {
         value: 'stated',
-        note: 'Activity auto-deletes after 18 months by default, with 3, 18, 36 months or no auto-delete as options. Temporary chats and chats with Keep Activity off are retained for 72 hours. Anything reviewed by human reviewers is retained for up to three years.',
+        source: 'https://support.google.com/gemini/answer/13594961',
+        note: 'Auto-delete defaults to 18 months and can be changed to 3 months, 36 months or indefinite, and chats can be deleted by hand at any time. The exception is the one worth knowing: chats reviewed by human reviewers, plus related data such as language, device type, location and feedback, survive deletion and are kept up to three years.',
       },
       deletion: {
         value: 'self-serve',
-        note: 'Chats can be deleted manually at any time in Gemini Apps Activity, auto-delete can be configured, and data can be exported through Takeout. Deleting does not remove chats already sent to reviewers, nor copies held by other Google services.',
+        source: 'https://support.google.com/gemini/answer/13594961',
+        note: 'Gemini Apps chats can be deleted manually at any time and activity can be exported through Google Takeout. Deleting Gemini activity does not delete data held by other Google services, and chats seen by human reviewers are retained regardless.',
       },
       residency: {
         hq_jurisdiction: 'US',
@@ -247,16 +249,17 @@ export const TOOLS = [
       },
       enterprise_api: {
         value: 'separate',
-        note: 'Google states that work and school accounts may be subject to different data-handling terms under a separate Workspace privacy hub, and the cloud API is governed separately. Neither was read in this pass, so no training commitment is asserted here.',
+        source: 'https://support.google.com/gemini/answer/13594961',
+        note: 'Google states that a work or school Google Account may be subject to different data handling terms, documented separately in the Generative AI in Google Workspace privacy hub. The consumer notice read here does not govern those accounts.',
       },
     },
     verification: {
-      status: 'draft-unverified',
-      last_verified: null,
-      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
-      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
-    },
-    policy_sources: [
+      status: 'partially-verified',
+      last_verified: '2026-09-02',
+      reviewer: 'policy pages read on the recorded date',
+      method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
+      note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: residency, free_tier.',
+    },    policy_sources: [
       { label: 'Gemini Apps Privacy Hub and privacy notice', url: 'https://support.google.com/gemini/answer/13594961' },
       { label: 'Google Privacy Policy (the notice supplements this)', url: 'https://policies.google.com/privacy' },
     ],
@@ -315,8 +318,7 @@ export const TOOLS = [
       reviewer: 'policy pages read on the recorded date',
       method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
       note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: trains_on_data, retention, human_review, free_tier.',
-    },
-    policy_sources: [
+    },    policy_sources: [
       { label: 'Privacy notice', url: 'https://www.perplexity.ai/hub/legal/privacy-notice' },
     ],
   }),
@@ -437,18 +439,21 @@ export const TOOLS = [
         note: 'To verify: any statement about review of conversations.',
       },
       retention: {
-        value: 'unknown',
-        note: 'To verify: retention of conversations and their relationship to the X account.',
+        value: 'stated',
+        source: 'https://x.ai/legal/privacy-policy',
+        note: 'The general rule is an ongoing legitimate business need with no fixed clock. Two concrete periods are given: Private Chat conversations are deleted from SpaceXAI systems within 30 days, and anything you delete — individual conversations or the whole account — goes within 30 days. Both allow longer retention for legal, compliance or safety reasons.',
       },
       deletion: {
-        value: 'request',
-        note: 'To verify: whether deleting chats is self-serve in the app.',
+        value: 'self-serve',
+        source: 'https://x.ai/legal/privacy-policy',
+        note: 'You can delete individual conversations or the whole account from within the service, and the policy commits to deletion within 30 days. Some rights have to go through the privacy portal instead, and the policy warns it cannot guarantee factual accuracy of model output about you.',
       },
       residency: {
-        hq_jurisdiction: 'US',
+        hq_jurisdiction: "US",
         eu_option: false,
-        regions: ['US'],
-        note: 'To verify: whether EU users have any residency option.',
+        regions: ["US"],
+        source: 'https://x.ai/legal/privacy-policy',
+        note: 'SpaceXAI describes itself as a US-based company and the policy has a separate Europe addendum for EEA, UK and Swiss residents. Where data is stored or processed was not stated on the pages read. Note also that using Grok through X is governed by X\'s privacy policy, not this one.',
       },
       free_tier: {
         value: 'differs',
@@ -456,8 +461,16 @@ export const TOOLS = [
       },
       enterprise_api: {
         value: 'separate',
-        note: 'To verify: whether API data is excluded from training.',
+        source: 'https://x.ai/legal/privacy-policy',
+        note: 'The consumer privacy policy explicitly does not apply to data processed on behalf of business customers, including the SpaceXAI API, which is documented in separate enterprise material. Use through a third party such as X falls under that third party\'s policy instead.',
       },
+    },
+    verification: {
+      status: 'partially-verified',
+      last_verified: '2026-09-02',
+      reviewer: 'policy pages read on the recorded date',
+      method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
+      note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: trains_on_data, human_review, free_tier.',
     },
     policy_sources: [
       { label: 'Privacy policy', url: 'https://x.ai/legal/privacy-policy' },
@@ -520,8 +533,7 @@ export const TOOLS = [
       reviewer: 'policy pages read on the recorded date',
       method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
       note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: free_tier.',
-    },
-    policy_sources: [
+    },    policy_sources: [
       { label: 'Privacy policy', url: 'https://legal.mistral.ai/terms/privacy-policy' },
       { label: 'Legal document index', url: 'https://legal.mistral.ai/terms' },
     ],
