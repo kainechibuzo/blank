@@ -1,4 +1,5 @@
 import TrustStrip from '../components/TrustStrip.jsx'
+import TapTargets from '../components/TapTargets.jsx'
 
 /**
  * Home — the entry point.
@@ -25,6 +26,8 @@ export default function Home() {
         <p className="mt-4 text-lg leading-relaxed text-ink-soft sm:text-xl">
           Tap what fits. We&rsquo;ll tell you what actually happens to it.
         </p>
+
+        <TapTargets className="mt-8" />
 
         <TrustStrip className="mt-8" />
       </section>

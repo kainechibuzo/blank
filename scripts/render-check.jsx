@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import App from '../src/App.jsx'
 import { AuthProvider } from '../src/lib/auth.jsx'
 
-const routes = ['/', '/compare', '/compare?f=no_training,eu_residency&sort=coverage', '/tools/chatgpt', '/tools/le-chat', '/discover', '/methodology', '/charter', '/directory', '/directory/submit', '/account', '/admin', '/sponsors', '/dev/states', '/nope']
+const routes = ['/', '/what/medical-info', '/compare', '/compare?f=no_training,eu_residency&sort=coverage', '/tools/chatgpt', '/tools/le-chat', '/discover', '/methodology', '/charter', '/directory', '/directory/submit', '/account', '/admin', '/sponsors', '/dev/states', '/nope']
 let failed = 0
 for (const r of routes) {
   try {

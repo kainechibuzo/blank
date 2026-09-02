@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { datasetSummary } from '../lib/dataset-summary.js'
+import { FIELD_ORDER } from '../data/schema.js'
 import { formatDate } from '../lib/format.js'
 
 /**
@@ -21,7 +22,7 @@ export default function SiteFooter() {
     <footer className="mt-10 border-t border-line bg-white">
       <div className="mx-auto max-w-6xl px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
         <p className="text-xs leading-relaxed text-ink-faint">
-          {toolCount} major AI tools · 8 facts each · read from their own policies ·{' '}
+          {toolCount} major AI tools · {FIELD_ORDER.length} facts each · read from their own policies ·{' '}
           {rowsRead < toolCount ? `${rowsRead} of ${toolCount} rows read so far · ` : ''}
           last batch read {formatDate(lastReadOn)} · not legal advice ·{' '}
           <Link to="/methodology" className="underline underline-offset-2 hover:text-ink">

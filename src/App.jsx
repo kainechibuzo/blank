@@ -13,12 +13,14 @@ import Admin from './pages/Admin.jsx'
 import Sponsors from './pages/Sponsors.jsx'
 import NotFound from './pages/NotFound.jsx'
 import DevStates from './pages/DevStates.jsx'
+import Result from './pages/Result.jsx'
 
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<Home />} />
+        <Route path="/what/:slug" element={<Result />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/tools/:id" element={<ToolPage />} />
         <Route path="/discover" element={<Discover />} />

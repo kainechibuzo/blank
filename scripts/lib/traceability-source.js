@@ -615,6 +615,28 @@ export async function runSourceChecks() {
       : 'every rendering asks stateForField what the value means, and gets null rather than a guess when it cannot say'
   )
 
+  /* 19 — The chrome counts the fields the schema actually has.
+
+          Everywhere the site says how many facts it tracks, the number comes
+          from FIELD_ORDER. The roadmap says eight; the schema has seven, and
+          the Phase 2/5 briefs inherit the eight while listing seven labels.
+          Hardcoding "8 facts each" would be a claim about our own data that is
+          simply false, in the footer, where the credibility claims live. */
+  const countClaimFiles = ['src/components/SiteFooter.jsx', 'src/pages/Home.jsx']
+  const hardcodedCounts = []
+  for (const rel of countClaimFiles) {
+    const code = stripComments(await read(rel).catch(() => ''))
+    if (/\b8\s*(facts|fields)\b/i.test(code)) hardcodedCounts.push(rel)
+  }
+  const schemaForCount = await import('../../src/data/schema.js')
+  push(
+    'Field counts in the chrome come from the schema, not from prose',
+    hardcodedCounts.length === 0,
+    hardcodedCounts.length
+      ? `hardcoded "8 facts" in ${hardcodedCounts.join(', ')}`
+      : `FIELD_ORDER has ${schemaForCount.FIELD_ORDER.length} fields and the chrome quotes that number`
+  )
+
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
   const { STATES, stateForField } = await import('../../src/lib/field-states.js')
