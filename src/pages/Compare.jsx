@@ -5,6 +5,7 @@ import { applyFilters, encodeState, decodeState } from '../lib/filters.js'
 import { COMPARE_SORTS, groupAndSort } from '../lib/compare.js'
 import FilterRail from '../components/FilterRail.jsx'
 import ComparisonRow from '../components/ComparisonRow.jsx'
+import DescribeBox from '../components/DescribeBox.jsx'
 
 /**
  * Compare — the full comparison, for people who want to go deeper.
@@ -23,6 +24,9 @@ export default function Compare() {
      individual tool pages are for — this page is for narrowing down, and a
      stack of expanded rows is a wall of text, not a comparison. */
   const [openId, setOpenId] = useState(null)
+  /* Which filters came from free text, and the phrase that produced each one,
+     so the row of chips can say why it is there. */
+  const [derived, setDerived] = useState({})
 
   const results = useMemo(
     () => applyFilters(TOOLS, { filters: state.filters, category: state.category }),
@@ -42,7 +46,22 @@ export default function Compare() {
     update({ ...state, filters })
   }
 
-  const resetFilters = () => update({ ...state, filters: [] })
+  const resetFilters = () => {
+    setDerived({})
+    update({ ...state, filters: [] })
+  }
+
+  const applyDerived = (filters, nextDerived) => {
+    setDerived(nextDerived)
+    update({ ...state, filters })
+  }
+
+  const removeFilter = (id) => {
+    const next = { ...derived }
+    delete next[id]
+    setDerived(next)
+    update({ ...state, filters: state.filters.filter((x) => x !== id) })
+  }
 
   const shown = groups.reduce((n, g) => n + g.rows.length, 0)
 
@@ -76,6 +95,13 @@ export default function Compare() {
               <span className="font-medium text-ink">{shown}</span> of {TOOLS.length} tools
               {state.filters.length ? ` · ${state.filters.length} filter${state.filters.length === 1 ? '' : 's'}` : ''}
             </p>
+
+            <DescribeBox
+              active={state.filters}
+              derived={derived}
+              onApply={applyDerived}
+              onRemove={removeFilter}
+            />
 
             <label className="flex items-center gap-2 text-sm text-ink-soft">
               Sort

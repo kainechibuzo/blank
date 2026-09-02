@@ -247,13 +247,13 @@ export function planQuery(rawText, ctx = {}) {
   // Ask at most two questions, and only when the answer changes the result set.
   if (asked.length < 2) {
     if (!statedAnything && !asked.includes('focus')) {
-      return { kind: 'ask', question: QUESTION_BY_ID.focus, partial: { filters: [...filters], category } }
+      return { kind: 'ask', question: QUESTION_BY_ID.focus, partial: { filters: [...filters], category }, matched }
     }
     if (wantsPrivacy && ![...filters].some((f) => f.startsWith('no_') || f === 'training_opt_out') && !asked.includes('strictness')) {
-      return { kind: 'ask', question: QUESTION_BY_ID.strictness, partial: { filters: [...filters], category } }
+      return { kind: 'ask', question: QUESTION_BY_ID.strictness, partial: { filters: [...filters], category }, matched }
     }
     if (!useCase && !category && !asked.includes('usecase') && asked.length < 1) {
-      return { kind: 'ask', question: QUESTION_BY_ID.usecase, partial: { filters: [...filters], category } }
+      return { kind: 'ask', question: QUESTION_BY_ID.usecase, partial: { filters: [...filters], category }, matched }
     }
   }
 
@@ -263,7 +263,7 @@ export function planQuery(rawText, ctx = {}) {
       filters: [...filters],
       category,
       useCase: null,
-      matched: [],
+      matched,
       empty: true,
     }
   }
