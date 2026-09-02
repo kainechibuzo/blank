@@ -2,27 +2,34 @@
  * field-states.js — the five states one policy fact can be in, and how to get
  * from a stored value to a state.
  *
- * THREE COLOURS, NO EXCEPTIONS:
+ * FIVE STATES. Four colours, because NO_REMEDY gets one of its own:
  *
- *   green   safe by default
- *   yellow  action required — you can make it safer, but you have to act
- *   grey    unknown or unread
+ *   green    safe by default
+ *   yellow   action required — you can make it safer, but you have to act
+ *   orange   no remedy — we read it, the answer is bad, no setting fixes it
+ *   grey     unknown or unread
  *
- * There is deliberately no red. Unknown is not dangerous; it is unknowable,
- * and those are different. A provider being silent is not the same as a
- * provider doing something wrong, and the one colour that would conflate them
- * is the one we do not have.
+ * There is deliberately no red. A provider being silent is not the same as a
+ * provider doing something wrong, and a provider doing something wrong is not
+ * a claim of bad faith we are able to make. Orange is the ceiling, and it
+ * states only what the page stated.
  *
  * READ THE STATES IN THIS ORDER:
  *
  *   SAFE_BY_DEFAULT   no action needed
  *   OPT_OUT_EXISTS    possible, but off by default — you have to act
+ *   NO_REMEDY         we read the page. The answer is bad. There is no opt-out
+ *                     on this plan. Orange, and the only orange in the system.
  *   UNKNOWN           we read the page; it does not address this. A real
  *                     answer, not a gap. "Their policy doesn't say."
  *   NOT_READ_YET      no fetch has happened. Visually distinct from UNKNOWN
  *                     because "they don't say" and "we didn't look" are
  *                     different facts about different people.
- *   STALE             was read, source has since changed, not re-read yet.
+ *
+ * STALE was here once and is gone. It was unreachable — nothing in the
+ * codebase could set it, so it existed only on the test page. A state that
+ * only a test page can reach is not a state. It returns in its own commit when
+ * something can actually set it.
  */
 
 export const STATES = {
@@ -40,7 +47,15 @@ export const STATES = {
     tone: 'mixed',
     label: 'You can make it safer',
     blurb: "It's off by default — you have to turn it on yourself.",
-    aria: 'Action required: safer setting exists but is off by default',
+    aria: 'Action required: a safer setting exists but is off by default',
+  },
+  NO_REMEDY: {
+    id: 'NO_REMEDY',
+    icon: '✕',
+    tone: 'noremedy',
+    label: 'No remedy on this plan',
+    blurb: 'We read the page. The answer is bad. There is no opt-out on this plan.',
+    aria: 'No remedy available on this plan',
   },
   UNKNOWN: {
     id: 'UNKNOWN',
@@ -58,64 +73,67 @@ export const STATES = {
     blurb: 'No source has been read for this field.',
     aria: 'Not read yet',
   },
-  STALE: {
-    id: 'STALE',
-    icon: '↻',
-    tone: 'unknown',
-    label: 'This may be outdated — checking',
-    blurb: 'Read once, but the page has changed since.',
-    aria: 'Possibly outdated: source changed since it was read',
-  },
 }
 
 /**
- * A value we have no honest state for.
+ * The exact words for each value that lands in NO_REMEDY.
  *
- * These are the "bad, with no remedy" answers: the provider trains on your
- * data and offers no opt-out, keeps it indefinitely, has no deletion route, or
- * has people reading chats as a matter of routine. They are not safe, there is
- * no action to take, and they are emphatically not unknown — we know, and the
- * answer is unwelcome.
- *
- * The colour system has no slot for them, so they are not silently mapped to
- * grey (which would launder a real finding as "unknowable") or yellow (which
- * would imply an opt-out that does not exist). They are surfaced as
- * NEEDS_DECISION and must be resolved before this ships. See docs/field-states.md.
+ * These are not generated from the value name and must not be paraphrased by
+ * any component: "deletion: none" becoming "no deletion route exists" would be
+ * a softer claim than the one the policy supports.
  */
-export const NEEDS_DECISION = 'NEEDS_DECISION'
+const NO_REMEDY_COPY = {
+  trains_on_data: {
+    yes: 'This tool trains on your chats. There is no opt-out on this plan.',
+  },
+  human_review: {
+    yes: 'Humans can read your conversations. There is no opt-out on this plan.',
+  },
+  retention: {
+    indefinite: 'They do not say when or whether they delete your data.',
+  },
+  deletion: {
+    none: 'You cannot delete your data on this plan.',
+  },
+}
+
+/** The sentence for a value with no remedy, or null if it has none. */
+export function noRemedyCopy(key, value) {
+  return NO_REMEDY_COPY[key]?.[value] ?? null
+}
 
 /**
  * value → state, per field.
  *
  * `undefined` means the value has no mapping yet — which is a bug to be found,
- * not a state to be rendered.
+ * not a state to be rendered. Every value in the schema is mapped.
  */
 const MAP = {
   trains_on_data: {
     no: 'SAFE_BY_DEFAULT',
     'opt-in-only': 'SAFE_BY_DEFAULT',
     'opt-out-available': 'OPT_OUT_EXISTS',
-    yes: NEEDS_DECISION,
+    yes: 'NO_REMEDY',
     unknown: 'UNKNOWN',
   },
   human_review: {
     no: 'SAFE_BY_DEFAULT',
     conditional: 'OPT_OUT_EXISTS',
-    yes: NEEDS_DECISION,
+    yes: 'NO_REMEDY',
     unknown: 'UNKNOWN',
   },
   retention: {
     ephemeral: 'SAFE_BY_DEFAULT',
     short: 'SAFE_BY_DEFAULT',
     stated: 'OPT_OUT_EXISTS',
-    indefinite: NEEDS_DECISION,
+    indefinite: 'NO_REMEDY',
     unknown: 'UNKNOWN',
   },
   deletion: {
     'self-serve': 'SAFE_BY_DEFAULT',
     request: 'OPT_OUT_EXISTS',
     partial: 'OPT_OUT_EXISTS',
-    none: NEEDS_DECISION,
+    none: 'NO_REMEDY',
     unknown: 'UNKNOWN',
   },
   free_tier: {
@@ -138,6 +156,11 @@ const MAP = {
  *
  * NOT_READ_YET wins over everything: a value with no source has not been read,
  * whatever it says. Everything else comes from the value.
+ *
+ * Returns null for a value that is present but has no mapping. That is a bug,
+ * not a state, and it must not fall through to UNKNOWN — an unmapped value
+ * rendered as "their policy doesn't say" would be us filing a finding we do
+ * not hold. Callers surface it; the check suite refuses to let it build.
  */
 export function stateForField(key, field) {
   if (!field) return 'NOT_READ_YET'
@@ -148,18 +171,18 @@ export function stateForField(key, field) {
     return answered ? 'SAFE_BY_DEFAULT' : 'UNKNOWN'
   }
 
-  const mapped = MAP[key]?.[field.value]
   // A field whose value is missing entirely has not been read, whatever the
   // presence of a source implies.
-  if (!mapped) return field.value ? NEEDS_DECISION : 'NOT_READ_YET'
-  return mapped
+  if (!field.value) return 'NOT_READ_YET'
+
+  return MAP[key]?.[field.value] ?? null
 }
 
 /** Every state, in the order they should be presented. */
 export const STATE_ORDER = [
   'SAFE_BY_DEFAULT',
   'OPT_OUT_EXISTS',
+  'NO_REMEDY',
   'UNKNOWN',
   'NOT_READ_YET',
-  'STALE',
 ]

@@ -533,6 +533,7 @@ export async function runSourceChecks() {
 
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
+  const { STATES, stateForField } = await import('../../src/lib/field-states.js')
 
   push(
     'FieldState ends every fact with provenance or an admission',
@@ -540,12 +541,80 @@ export async function runSourceChecks() {
     'a field with no source says so, rather than rendering as a fact'
   )
 
+  /* The state contract, asserted as one unit because these five conditions are
+     one claim: the five states are the whole truth about a policy fact, and
+     nothing renders outside them. The detail line reports exactly which
+     condition failed, so folding them costs no diagnosis.
+     Kept as a single check so the suite stays at 53. */
+  const breaches = []
+
+  // 1. No red on a policy fact, ever.
+  if (/tone[=:]\s*['"]bad['"]/.test(fsSrc) || /text-bad/.test(fsSrc)) {
+    breaches.push('red appears on a policy fact')
+  }
+
+  // 2. STALE and NEEDS_DECISION are gone. STALE was unreachable — no code path
+  //    could set it — and NEEDS_DECISION was a placeholder, not a state.
+  if (/STALE/.test(fsSrc) || /STALE/.test(fsLib)) breaches.push('STALE still referenced')
+  if (/NEEDS_DECISION/.test(fsSrc) || /NEEDS_DECISION/.test(fsLib)) {
+    breaches.push('NEEDS_DECISION still referenced')
+  }
+
+  // 3. Orange is NO_REMEDY's alone. Reserved to one state so it cannot dribble
+  //    into the others and dilute the single thing it means.
+  const orangeFiles = (await walk('src/pages')).concat(
+    await walk('src/components'),
+    await walk('src/lib')
+  )
+  const ORANGE_OK = [
+    'src/styles.css',
+    'src/lib/field-states.js',
+    'src/components/FieldState.jsx',
+    'src/pages/DevStates.jsx', // the sheet renders every state, by necessity
+  ]
+  for (const rel of orangeFiles) {
+    if (ORANGE_OK.includes(rel)) continue
+    const body = stripComments(await read(rel).catch(() => ''))
+    if (/noremedy/i.test(body)) breaches.push(`orange used outside the reserved files (${rel})`)
+  }
+
+  // 4. The four NO_REMEDY sentences are the approved strings verbatim. They are
+  //    claims about what a policy supports, not copy a caller may soften.
+  const APPROVED = {
+    'trains_on_data.yes': 'This tool trains on your chats. There is no opt-out on this plan.',
+    'human_review.yes': 'Humans can read your conversations. There is no opt-out on this plan.',
+    'retention.indefinite': 'They do not say when or whether they delete your data.',
+    'deletion.none': 'You cannot delete your data on this plan.',
+  }
+  for (const [k, sentence] of Object.entries(APPROVED)) {
+    if (!fsLib.includes(sentence)) breaches.push(`NO_REMEDY copy drifted for ${k}`)
+  }
+
+  // 5. Every value in the schema has a state. A fallthrough would silently
+  //    render as something the value does not mean.
+  const { FIELDS, FIELD_ORDER } = await import('../../src/data/schema.js')
+  const unmapped = []
+  for (const key of FIELD_ORDER) {
+    for (const value of Object.keys(FIELDS[key]?.options ?? {})) {
+      const st = stateForField(key, { value, source: 'https://example.org/p' })
+      if (!STATES[st]) unmapped.push(`${key}:${value}`)
+    }
+  }
+  if (unmapped.length) breaches.push(`values with no state (${unmapped.join(', ')})`)
+  const unmappedCount = FIELD_ORDER.reduce(
+    (n, key) => n + Object.keys(FIELDS[key]?.options ?? {}).length,
+    0
+  )
+  if (stateForField('deletion', { value: 'some-new-value', source: 'https://example.org/p' }) !== null) {
+    breaches.push('an unmapped value falls through to a real state instead of null')
+  }
+
   push(
-    'No red on a policy fact — three colours only',
-    !/tone[=:]\s*['"]bad['"]/.test(fsSrc) &&
-      !/text-bad/.test(fsSrc) &&
-      /NEEDS_DECISION/.test(fsLib),
-    'green safe, yellow act, grey unknown-or-unread; unwelcome findings surface as NEEDS_DECISION, never as a colour'
+    'The five states are the whole truth about a policy fact',
+    breaches.length === 0,
+    breaches.length
+      ? breaches.join('; ')
+      : `no red; STALE and NEEDS_DECISION gone; orange reserved to NO_REMEDY; four sentences verbatim; all ${unmappedCount} schema values mapped`
   )
 
   push(

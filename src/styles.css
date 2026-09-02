@@ -27,6 +27,16 @@
   --color-bad-soft: #fbeaea;
   --color-unknown: #5b6270;
   --color-unknown-soft: #eef0f3;
+
+  /* NO_REMEDY is the only thing in this system allowed to be orange, and the
+     reason is the reason it exists at all. Orange means: we read the page, the
+     answer is bad, and no setting you can reach fixes it. It is deliberately
+     neither red nor grey — red would be a legal claim about a provider we
+     cannot make, and grey would file a finding we actually hold under
+     "unknowable", which is a lie in the opposite direction. Reserving the
+     colour to one state is what keeps it meaning one thing. 5.95:1 on paper. */
+  --color-noremedy: #9a4a00;
+  --color-noremedy-soft: #fdf0e6;
 }
 
 @layer base {

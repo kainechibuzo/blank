@@ -1,5 +1,5 @@
 import { FIELDS, FIELD_ORDER } from '../data/schema.js'
-import { STATES, STATE_ORDER, NEEDS_DECISION, stateForField } from '../lib/field-states.js'
+import { STATES, STATE_ORDER, stateForField, noRemedyCopy } from '../lib/field-states.js'
 import FieldState from '../components/FieldState.jsx'
 import FactPair from '../components/FactPair.jsx'
 import Pill from '../components/Pill.jsx'
@@ -16,6 +16,7 @@ import Pill from '../components/Pill.jsx'
 
 const SAMPLE_SOURCE = 'https://openai.com/policies/privacy-policy/'
 const SAMPLE_DATE = '2026-09-02'
+const LABEL = 'Does it learn from your chats?'
 
 export default function DevStates() {
   const matrix = FIELD_ORDER.map((key) => ({
@@ -23,11 +24,15 @@ export default function DevStates() {
     options: Object.keys(FIELDS[key]?.options ?? {}),
   })).filter((f) => f.options.length)
 
+  // A value that maps to undefined is a schema value we have not given a state
+  // to. That is never allowed to be a silent gap, so the page says how many
+  // there are rather than quietly rendering them as something else.
   const unmapped = []
   for (const { key, options } of matrix) {
     for (const value of options) {
-      const state = stateForField(key, { value, source: SAMPLE_SOURCE })
-      if (state === NEEDS_DECISION) unmapped.push(`${key}: ${value}`)
+      if (!STATES[stateForField(key, { value, source: SAMPLE_SOURCE })]) {
+        unmapped.push(`${key}: ${value}`)
+      }
     }
   }
 
@@ -37,19 +42,19 @@ export default function DevStates() {
         <Pill tone="neutral">not linked from the nav</Pill>
         <h1 className="mt-2 text-2xl font-semibold text-ink">Component states</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          The two primitives every page composes from. Sign these off before any page is rebuilt.
+          The two primitives every page composes from. Five live states, four colours, no red.
         </p>
       </header>
 
-      {/* ── 1. every state, as a user sees it ─────────────────────────────── */}
+      {/* ── 1. every live state, as a user sees it ────────────────────────── */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-ink-faint">
-          FieldState — all five
+          FieldState — all five live states
         </h2>
 
         <FieldState
           state="SAFE_BY_DEFAULT"
-          label="Does it learn from your chats?"
+          label={LABEL}
           source={SAMPLE_SOURCE}
           readOn={SAMPLE_DATE}
         >
@@ -58,7 +63,7 @@ export default function DevStates() {
 
         <FieldState
           state="OPT_OUT_EXISTS"
-          label="Does it learn from your chats?"
+          label={LABEL}
           source={SAMPLE_SOURCE}
           readOn={SAMPLE_DATE}
         >
@@ -66,48 +71,43 @@ export default function DevStates() {
           people never do.
         </FieldState>
 
-        <FieldState
-          state="UNKNOWN"
-          label="Does it learn from your chats?"
-          source={SAMPLE_SOURCE}
-          readOn={SAMPLE_DATE}
-        >
+        <FieldState state="NO_REMEDY" label={LABEL} source={SAMPLE_SOURCE} readOn={SAMPLE_DATE}>
+          This tool trains on your chats. There is no opt-out on this plan.
+        </FieldState>
+
+        <FieldState state="UNKNOWN" label={LABEL} source={SAMPLE_SOURCE} readOn={SAMPLE_DATE}>
           Their policy doesn&apos;t say. We read it — this is a gap in their policy, not in ours.
         </FieldState>
 
-        <FieldState state="NOT_READ_YET" label="Does it learn from your chats?">
+        <FieldState state="NOT_READ_YET" label={LABEL}>
           We haven&apos;t read this yet.
-        </FieldState>
-
-        <FieldState
-          state="STALE"
-          label="Does it learn from your chats?"
-          source={SAMPLE_SOURCE}
-          readOn="2026-06-01"
-        >
-          This may be outdated — checking.
         </FieldState>
       </section>
 
-      {/* ── 2. the gap, stated where it cannot be ignored ─────────────────── */}
+      {/* ── 2. NO_REMEDY, with the exact copy each value carries ──────────── */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-widest text-ink-faint">
-          FieldState — a value with no state yet
+          FieldState — NO_REMEDY copy, one per value
         </h2>
-        <FieldState
-          state={NEEDS_DECISION}
-          label="Can a person read your chats?"
-          source={SAMPLE_SOURCE}
-          readOn={SAMPLE_DATE}
-        >
-          Google states that human reviewers help protect their services, even when activity
-          saving is off.
-        </FieldState>
         <p className="text-xs leading-relaxed text-ink-soft">
-          This is what a fact renders as when the value is real, unwelcome, and fits none of the
-          five states. It is not grey — grey would call it unknowable, and it is not. It is not
-          yellow — yellow would imply an opt-out that does not exist. It needs a decision.
+          These four sentences are fixed strings, not generated from the value name. A component
+          may not paraphrase them: &ldquo;no deletion route exists&rdquo; is a softer claim than
+          the one the policy supports.
         </p>
+
+        {[
+          ['trains_on_data', 'yes', 'Does it learn from your chats?'],
+          ['human_review', 'yes', 'Can a person read your chats?'],
+          ['retention', 'indefinite', 'How long does it keep your data?'],
+          ['deletion', 'none', 'Can you delete everything?'],
+        ].map(([key, value, label]) => (
+          <FieldState
+            key={`${key}:${value}`}
+            fieldKey={key}
+            field={{ value, source: SAMPLE_SOURCE, read_on: SAMPLE_DATE }}
+            label={label}
+          />
+        ))}
       </section>
 
       {/* ── 3. FactPair across the coverage threshold ─────────────────────── */}
@@ -157,7 +157,7 @@ export default function DevStates() {
                             {meta.icon} {state}
                           </span>
                         ) : (
-                          <strong className="text-mixed">{state}</strong>
+                          <strong className="text-noremedy">NO STATE — unmapped</strong>
                         )}
                       </td>
                     </tr>
@@ -174,14 +174,11 @@ export default function DevStates() {
               {unmapped.length} value{unmapped.length === 1 ? '' : 's'} have no state:{' '}
               {unmapped.join(', ')}
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-              These are the &ldquo;bad, and nothing you can do about it&rdquo; answers. The
-              three-colour system has no slot for them. They are not rendered as unknown, because
-              they are known.
-            </p>
           </div>
         ) : (
-          <p className="text-xs text-good">Every value maps to a state.</p>
+          <p className="text-xs text-good">
+            Every value in the schema maps to a state. Nothing falls through.
+          </p>
         )}
       </section>
     </div>
@@ -189,5 +186,11 @@ export default function DevStates() {
 }
 
 function toneText(tone) {
-  return tone === 'good' ? 'text-good' : tone === 'mixed' ? 'text-mixed' : 'text-unknown'
+  return tone === 'good'
+    ? 'text-good'
+    : tone === 'mixed'
+      ? 'text-mixed'
+      : tone === 'noremedy'
+        ? 'text-noremedy'
+        : 'text-unknown'
 }
