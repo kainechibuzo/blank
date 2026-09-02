@@ -149,12 +149,40 @@ export function runTraceabilityChecks() {
     `score ${blank.score}, coverage ${blank.coverage}%`
   )
 
-  /* 6 — Verification honesty: no date without a verified status. */
-  const fabricated = TOOLS.filter((t) => t.verification.last_verified && t.verification.status !== 'verified')
+  /* 6 — Verification honesty.
+        A date means "a person read this row". It is fabricated when it sits on
+        a row that has never been read. `stale` and `disputed` keep the date
+        from the reading that actually happened, so they are not fabrication. */
+  const NEVER_READ = ['draft-unverified', 'observed']
+  const fabricated = TOOLS.filter(
+    (t) => t.verification.last_verified && NEVER_READ.includes(t.verification.status)
+  )
   push(
     'No fabricated verification dates',
     fabricated.length === 0,
-    fabricated.length ? fabricated.map((t) => t.id).join(', ') : `${TOOLS.length} rows audited`
+    fabricated.length ? `date on an unread row: ${fabricated.map((t) => t.id).join(', ')}` : `${TOOLS.length} rows audited`
+  )
+
+  /* 6b — A verification claim has to be worth what it says.
+          Each confirmed field carries the page it was read from, so the claim
+          can be checked: 'verified' means every field was read, 'partially-
+          verified' means some were and the rest say so. */
+  const sourced = (t) => Object.values(t.fields).filter((f) => f.source).length
+  const overclaimed = TOOLS.filter(
+    (t) => t.verification.status === 'verified' && sourced(t) !== Object.keys(t.fields).length
+  )
+  const underExplained = TOOLS.filter(
+    (t) => t.verification.status === 'partially-verified' && (sourced(t) === 0 || !t.verification.last_verified)
+  )
+  const dateless = TOOLS.filter(
+    (t) => t.verification.status === 'partially-verified' && !t.verification.last_verified
+  )
+  push(
+    "'Verified' means every field was read and cites its source",
+    overclaimed.length === 0 && underExplained.length === 0 && dateless.length === 0,
+    overclaimed.length
+      ? `claims verified with unsourced fields: ${overclaimed.map((t) => t.id).join(', ')}`
+      : `${TOOLS.filter((t) => t.verification.status !== 'draft-unverified').length} row(s) read; the rest say they have not been`
   )
 
   /* 7 — Signal separation: community signal stays null until Phase 2 exists. */

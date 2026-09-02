@@ -21,6 +21,17 @@ function residencySummary(r) {
   }
 }
 
+/** "openai.com/policies/…" — the host and enough path to recognise the page. */
+function sourceLabel(url) {
+  try {
+    const u = new URL(url)
+    const path = u.pathname.split('/').filter(Boolean).slice(-2).join('/')
+    return path ? `${u.hostname.replace(/^www\./, '')}/…/${path}` : u.hostname.replace(/^www\./, '')
+  } catch {
+    return url
+  }
+}
+
 export default function ToolPage() {
   const { id } = useParams()
   const tool = TOOL_BY_ID[id]
@@ -139,6 +150,26 @@ export default function ToolPage() {
                       {field.note}
                     </p>
                   )}
+                  {/* A read value points at the page it was read from, so the
+                      claim can be checked. No source means no one has read
+                      this field yet — which is the point of showing it. */}
+                  <p className="mt-1.5 text-[11px] text-ink-faint">
+                    {field.source ? (
+                      <>
+                        Read from{' '}
+                        <a
+                          href={field.source}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="underline decoration-line underline-offset-2 hover:text-ink"
+                        >
+                          {sourceLabel(field.source)}
+                        </a>
+                      </>
+                    ) : (
+                      'No source read yet — this field is not established.'
+                    )}
+                  </p>
                 </div>
               </div>
             )

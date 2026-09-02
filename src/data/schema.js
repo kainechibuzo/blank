@@ -24,6 +24,12 @@ export const VERIFICATION_STATUSES = {
     blurb:
       'Entered to exercise the schema. No human has read the policy and confirmed this row. Do not rely on it.',
   },
+  'partially-verified': {
+    label: 'Partly verified',
+    tone: 'mixed',
+    blurb:
+      'Some fields were read and confirmed against the linked policy on the stated date. The rest are not established yet, and say so — a partly-read row is not a read row.',
+  },
   observed: {
     label: 'Observed — not reviewed',
     tone: 'unknown',

@@ -1,0 +1,74 @@
+{
+  "chatgpt": {
+    "_verdict": "verified",
+    "trains_on_data": {
+      "value": "opt-out-available",
+      "source": "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance",
+      "note": "Consumer ChatGPT and Codex content may be used to train models by default. OpenAI offers an opt-out in the privacy portal and in data controls; once it is set, new conversations are excluded. Two carve-outs are stated: sending feedback such as a thumbs rating hands over the whole conversation even when opted out, and temporary chats are excluded either way."
+    },
+    "human_review": {
+      "value": "conditional",
+      "source": "https://openai.com/policies/privacy-policy/",
+      "note": "The policy lists monitoring of content submitted or exchanged on the platform as a purpose, for fraud, abuse and misuse prevention, and points to a separate transparency page on the practice. It also states that administrators of a business or Enterprise account can access user content. It does not describe a routine human review programme for consumer chats."
+    },
+    "retention": {
+      "value": "stated",
+      "source": "https://openai.com/policies/privacy-policy/",
+      "note": "Deleted personal data is removed from systems within 30 days and temporary chats are auto-deleted within 30 days. Otherwise the rule is purpose-bound rather than a fixed clock: data is kept while it is needed to provide the service, with longer retention permitted for legal obligations, fraud and abuse, security, payment records, and an audit record of the erasure request itself."
+    },
+    "deletion": {
+      "value": "self-serve",
+      "source": "https://openai.com/policies/privacy-policy/",
+      "note": "Account data controls allow deleting or archiving individual chats and deleting the account outright, plus exporting history. Statutory rights can also be exercised through the privacy portal or by email, but the everyday route is a control in the product."
+    },
+    "residency": {
+      "value": { "hq_jurisdiction": "US", "eu_option": false, "regions": ["US"] },
+      "source": "https://openai.com/policies/privacy-policy/",
+      "note": "Personal data is processed on servers in the United States and in other countries where OpenAI, its affiliates, partners and vendors operate. Separate EEA, UK and Swiss versions of the policy exist. No EU-specific data residency option for consumers was found in this pass."
+    },
+    "free_tier": {
+      "value": "differs",
+      "source": "https://openai.com/policies/privacy-policy/",
+      "note": "The policy singles out Free and Go tiers: those tiers are shown ads, and data is used to personalise and measure them. Paid consumer tiers are not described that way. Training controls and the opt-out are available on every consumer tier."
+    },
+    "enterprise_api": {
+      "value": "separate-no-training",
+      "source": "https://help.openai.com/en/articles/5722486-how-your-data-is-used-to-improve-model-performance",
+      "note": "Business, Enterprise and API inputs and outputs are not trained on by default; organisations are opted out unless they explicitly opt in to share data. Those offerings sit under customer agreements rather than the consumer privacy policy."
+    }
+  },
+  "claude": {
+    "_verdict": "partially-verified",
+    "_unverified": ["residency"],
+    "trains_on_data": {
+      "value": "opt-in-only",
+      "source": "https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training",
+      "note": "On consumer plans (Free, Pro, Max) chats and coding sessions are used to improve models only if you allow it, if you explicitly opt in, or if you send feedback by hand. One exception is stated: conversations flagged for safety review may be analysed and used to train the safeguards team's models. Incognito chats are never used. Turning the setting off stops future use, though data already inside an in-progress training run stays in it."
+    },
+    "human_review": {
+      "value": "conditional",
+      "source": "https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training",
+      "note": "Conversations are not described as routinely read. The stated route to human involvement is automated trust and safety flagging: chats flagged as violating the usage policy may be reviewed, analysed and retained in order to enforce it and to train safety models."
+    },
+    "retention": {
+      "value": "stated",
+      "source": "https://privacy.anthropic.com/en/articles/10023548-how-long-do-you-store-personal-data",
+      "note": "Several stated clocks rather than one. Deleted conversations leave the back end within 30 days. Chats you allow for model improvement are kept de-identified for up to 5 years. Usage-policy violations are kept up to 2 years, with trust and safety classification scores up to 7. Feedback submissions are kept 5 years. Longer retention is permitted for legal, dispute and enforcement reasons."
+    },
+    "deletion": {
+      "value": "self-serve",
+      "source": "https://privacy.anthropic.com/en/articles/10023548-how-long-do-you-store-personal-data",
+      "note": "Conversations can be deleted at any time from the chat itself. They leave chat history immediately and back-end storage within 30 days, and a deleted chat is not used for future training. Rights requests touching training data are handled separately, and the policy warns that process is complex."
+    },
+    "free_tier": {
+      "value": "same-policy",
+      "source": "https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training",
+      "note": "The model-training article covers Free, Pro and Max together, with one set of rules and one setting for all of them. No tier-based difference in data use was stated on the pages read for this row."
+    },
+    "enterprise_api": {
+      "value": "separate-no-training",
+      "source": "https://www.anthropic.com/legal/privacy",
+      "note": "The consumer privacy policy explicitly does not apply where Anthropic processes data on behalf of commercial customers; the customer is the controller and their own agreement governs. Commercial offerings are documented separately in the privacy centre."
+    }
+  }
+}

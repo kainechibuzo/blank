@@ -114,7 +114,7 @@ as red on the tool page; over 60 days render as amber.
 > **Unresolved.** What happens when the tool count makes one person the bottleneck? Options: paid
 > reviewers with a public corrections process, or narrowing scope. Not decided.
 
-## Corrected 2026-09-01
+## Corrected 2026-09-02
 
 Five rows (ChatGPT, Claude, Gemini, Perplexity, Le Chat) carried `status: 'verified'` with
 `last_verified: '2026-08-31'` while the file's own header said no one had opened any of the linked
