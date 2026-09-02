@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# pre-commit — the suite runs before the commit exists, not after.
+#
+# Added after f113fc0 shipped a page that threw "GROUPS is not defined". The
+# render check caught it and the commit went in anyway, because the failure was
+# being read as a line of output rather than as a stop. A check you have to
+# remember to read is not a gate; this one decides whether the commit happens.
+#
+# No `|| true`, no warn-only mode, no environment variable to skip it. The only
+# way past a genuine failure is `git commit --no-verify`, which is meant to feel
+# like breaking glass.
+#
+# Install with:  npm run setup:hooks
+# (or: git config core.hooksPath .githooks)
+
+set -e
+
+echo "pre-commit: running the check suite"
+
+if npm run check; then
+  echo "pre-commit: suite passed"
+else
+  echo ""
+  echo "pre-commit: THE SUITE FAILED. Nothing was committed."
+  echo ""
+  echo "  Read the failure above rather than looking for the word FAIL."
+  echo "  To commit anyway — you are asserting this failure is deliberate:"
+  echo "    git commit --no-verify"
+  echo ""
+  exit 1
+fi

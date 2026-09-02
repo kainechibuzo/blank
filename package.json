@@ -17,7 +17,8 @@
     "check:edge": "node scripts/check-edge-diagnosis.mjs",
     "check:observer": "node scripts/check-observer.mjs",
     "check": "npm run check:traceability && npm run check:render && npm run check:edge && npm run check:observer",
-    "check:snippets": "node scripts/check-directory-snippets.mjs"
+    "check:snippets": "node scripts/check-directory-snippets.mjs",
+    "setup:hooks": "git config core.hooksPath .githooks && echo \"pre-commit hook installed from .githooks/\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
