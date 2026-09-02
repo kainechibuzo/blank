@@ -17,6 +17,10 @@ export const SITE = {
   name: 'AI Transparency',
   tagline: 'What AI products actually do with your data, in plain English.',
   phase: 'Phase 1 — transparency + comparison (Phase 3 chat discovery in preview)',
+  /* Where a correction goes. A public issue, not a contact form: the report
+     becomes part of the audit trail rather than a private email nobody else can
+     see or check. */
+  repo: 'https://github.com/kainechibuzo/blank',
 }
 
 /** Verification lifecycle. Anything not `verified` is rendered as provisional. */

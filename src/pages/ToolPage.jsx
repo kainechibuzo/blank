@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom'
 import { TOOLS } from '../data/tools.js'
-import { FIELD_ORDER } from '../data/schema.js'
+import { FIELD_ORDER, SITE } from '../data/schema.js'
 import { scoreTool } from '../lib/scoring.js'
 import { toolLastReadOn } from '../lib/dataset-summary.js'
 import { formatDate } from '../lib/format.js'
@@ -35,6 +35,29 @@ export default function ToolPage() {
      than implying one document covers everything. */
   const readSources = FIELD_ORDER.map((k) => tool.fields?.[k]?.source).filter(Boolean)
   const allOneSource = readSources.length > 0 && new Set(readSources).size === 1
+
+  /* Pre-filled with what we already know — the tool, the date we read it, the
+     date the report is made — and one empty field for the thing we do not. A
+     form that asks the reader to restate what the page already says gets filled
+     in less often. */
+  const issueUrl = [
+    `${SITE.repo}/issues/new`,
+    '?title=' + encodeURIComponent(`Correction: ${tool.name}`),
+    '&body=' +
+      encodeURIComponent(
+        [
+          `Tool: ${tool.name}`,
+          `Reported: ${new Date().toISOString().slice(0, 10)}`,
+          `Source last read: ${lastRead ?? 'not read yet'}`,
+          '',
+          "What's wrong:",
+          '',
+          '',
+          '---',
+          'Please paste the sentence from the policy that corrects us, and link to it.',
+        ].join('\n')
+      ),
+  ].join('')
 
   return (
     <article className="mx-auto max-w-2xl">
@@ -120,6 +143,37 @@ export default function ToolPage() {
           ))}
         </ul>
       </section>
+
+      {/* ── BLOCK 4 — footer ────────────────────────────────────────────── */}
+      <footer className="mt-12 border-t border-line pt-6">
+        <p className="text-sm leading-relaxed text-ink-soft">
+          Not legal advice. We paraphrase — we do not quote policy text verbatim. Policies change
+          without notice.
+        </p>
+
+        <p className="mt-3">
+          <a
+            href={issueUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="inline-flex min-h-[44px] items-center text-sm font-medium text-accent hover:underline"
+          >
+            If you spot an error, tell us →
+          </a>
+        </p>
+
+        <p className="mt-1 text-xs text-ink-faint">
+          Opens a public issue on GitHub, pre-filled with the tool and today&rsquo;s date. The
+          correction becomes part of the record rather than an email nobody else can check.
+        </p>
+
+        {/* Repeated on purpose. Someone who has just read seven facts and is
+            deciding whether to trust them should not have to scroll back up to
+            find out how old it is. */}
+        <p className="mt-4 text-sm text-ink-soft">
+          Last read: {lastRead ? formatDate(lastRead) : 'not yet'}
+        </p>
+      </footer>
     </article>
   )
 }
