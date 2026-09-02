@@ -493,6 +493,23 @@ export async function runSourceChecks() {
   const pageBodies = await Promise.all(pageFiles.map((rel) => read(rel).catch(() => '')))
 
   /**
+   * The only two components allowed to render a score figure, and both are
+   * allowed only because neither can render one alone: each takes coverage and
+   * the read fraction as required company for the number. A third score
+   * renderer is a design decision, not an implementation detail, so it has to
+   * be added here deliberately.
+   */
+  const SCORE_RENDERERS = ['src/components/FactPair.jsx', 'src/components/ScoreBar.jsx']
+  for (const rel of SCORE_RENDERERS) {
+    const body = stripComments(await read(rel).catch(() => ''))
+    push(
+      `${rel.split('/').pop()} renders coverage and the read fraction alongside the score`,
+      /coverage/.test(body) && /(read|fraction)/.test(body),
+      'a score without its coverage is a number that looks like a verdict'
+    )
+  }
+
+  /**
    * Files that still render a bare score because they have not been rebuilt
    * yet. Listed by name so the debt is visible and shrinking, and so a NEW
    * bare score anywhere else fails immediately. Every entry here is owed a
@@ -511,7 +528,7 @@ export async function runSourceChecks() {
   // A bare score is a number interpolated into JSX text. `score={76}` is a
   // prop, not a rendering, so lines carrying `score=` are not violations.
   const scoreRenderers = pageFiles.filter((rel, i) => {
-    if (rel === 'src/components/FactPair.jsx') return false
+    if (SCORE_RENDERERS.includes(rel)) return false
     if (AWAITING_FACTPAIR.includes(rel)) return false
     return stripComments(pageBodies[i])
       .split('\n')

@@ -4,6 +4,7 @@ import { TOOLS } from '../data/tools.js'
 import { applyFilters, encodeState, decodeState } from '../lib/filters.js'
 import { COMPARE_SORTS, groupAndSort } from '../lib/compare.js'
 import FilterRail from '../components/FilterRail.jsx'
+import ComparisonRow from '../components/ComparisonRow.jsx'
 
 /**
  * Compare — the full comparison, for people who want to go deeper.
@@ -18,6 +19,10 @@ export default function Compare() {
   const [params, setParams] = useSearchParams()
   const state = decodeState(params)
   const [sort, setSort] = useState(state.sort === 'score' || state.sort === 'name' ? state.sort : 'coverage')
+  /* Only one row open at a time. Comparing two tools side by side is what the
+     individual tool pages are for — this page is for narrowing down, and a
+     stack of expanded rows is a wall of text, not a comparison. */
+  const [openId, setOpenId] = useState(null)
 
   const results = useMemo(
     () => applyFilters(TOOLS, { filters: state.filters, category: state.category }),
@@ -114,30 +119,13 @@ export default function Compare() {
 
                   <ul className="mt-3 space-y-2">
                     {group.rows.map(({ tool }, i) => (
-                      <li
+                      <ComparisonRow
                         key={tool.id}
-                        className="flex items-center gap-3 rounded-lg border border-line bg-white p-3"
-                      >
-                        <span className="w-6 shrink-0 text-right font-mono text-xs text-ink-faint">
-                          {i + 1}
-                        </span>
-                        <span
-                          aria-hidden="true"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-line bg-paper font-mono text-[11px] font-semibold text-ink-soft"
-                        >
-                          {tool.monogram ?? tool.name?.slice(0, 2)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-ink">
-                            <Link to={`/tools/${tool.id}`} className="hover:underline">
-                              {tool.name}
-                            </Link>
-                          </p>
-                          <p className="truncate text-xs text-ink-faint">
-                            {tool.category_label} · {tool.hq}
-                          </p>
-                        </div>
-                      </li>
+                        tool={tool}
+                        rank={i + 1}
+                        expanded={openId === tool.id}
+                        onToggle={() => setOpenId(openId === tool.id ? null : tool.id)}
+                      />
                     ))}
                   </ul>
                 </section>
