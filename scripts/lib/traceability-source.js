@@ -506,10 +506,6 @@ export async function runSourceChecks() {
     'src/pages/Methodology.jsx',
     'src/pages/Directory.jsx',
     'src/pages/SubmitListing.jsx',
-    /* The old researcher dashboard. It is replaced by the Phase 2 homepage in
-       the next commit, at which point it leaves this list and the no-score
-       check below becomes live for it. */
-    'src/pages/Home.jsx',
   ]
 
   // A bare score is a number interpolated into JSX text. `score={76}` is a

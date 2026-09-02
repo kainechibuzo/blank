@@ -1,4 +1,5 @@
 import { STATES, stateForField, noRemedyCopy } from '../lib/field-states.js'
+import { formatDate } from '../lib/format.js'
 
 /**
  * FieldState — one policy fact.
@@ -123,10 +124,4 @@ function Source({ source, readOn }) {
   )
 }
 
-/** "2 Sept 2026" — the format people actually read. */
-export function formatDate(iso) {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-}
+export { formatDate }
