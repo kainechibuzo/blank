@@ -51,10 +51,17 @@ export default function Result() {
       </h1>
       <p className="mt-2 text-lg text-ink-soft">Here&rsquo;s what actually happens to it.</p>
 
-      {/* Said once, at the top, before any grouping implies otherwise: the
-          policies do not sort by what you type. The category chooses which
-          facts lead, not what the answer is. */}
-      <p className="mt-5 rounded-lg border border-line bg-white p-4 text-sm leading-relaxed text-ink-soft">
+      {/* Exact copy, per the ruling. Stated before any grouping implies
+          otherwise: a category chooses which facts LEAD, and the policy applies
+          to everything you type regardless of what it is. This is the honest
+          version of what every competitor gets wrong by implying policies are
+          more granular than they are. */}
+      <p className="mt-5 text-sm leading-relaxed text-ink-soft">
+        These are the facts most relevant to {phrase}. The same policy applies to everything you
+        type.
+      </p>
+
+      <p className="mt-3 rounded-lg border border-line bg-white p-4 text-sm leading-relaxed text-ink-soft">
         {category.note}
       </p>
 

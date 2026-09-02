@@ -23,18 +23,33 @@ const SEVERITY = {
 }
 
 /**
- * The four groups, in the order they appear on screen.
+ * The six display groups, in canonical order.
  *
- * NOT READ YET is the fourth, and it is not in the original brief. It has to
- * exist: fourteen of twenty rows have never been read, and filing them under
- * "their policy doesn't answer this" would blame the provider for our own
- * unfinished work — the exact failure mode this product cannot have.
+ * This order is fixed and applies to every screen that groups tools — the
+ * result screen and the full comparison alike. Documented in
+ * docs/field-states.md. Sorting reorders WITHIN a group and never across one:
+ * a person sorting by score must not be able to promote a NO_REMEDY tool above
+ * a SAFE_BY_DEFAULT one, because that would turn a display preference into a
+ * claim about which tool is better.
+ *
+ * Two of these were not in the brief. `know` exists because the state matrix
+ * routes informational values to OPT_OUT_EXISTS, which is right at the value
+ * layer and wrong at the grouping layer. `unread` exists because fourteen of
+ * twenty rows have never been read, and filing them under `unclear` would
+ * blame a provider for our own unfinished work.
  */
 export const GROUPS = [
   {
     id: 'safe',
     heading: 'Safe by default',
     sub: 'Nothing you need to do.',
+  },
+  {
+    id: 'know',
+    // Exact string, per the ruling. Not "Informational", not "FYI": someone
+    // scanning fast understands this without reading the body copy.
+    heading: 'Worth knowing — nothing to switch off',
+    sub: 'Not a problem you can fix in settings. Something to know before you paste.',
   },
   {
     id: 'opt-out',
@@ -47,19 +62,17 @@ export const GROUPS = [
     sub: 'We read the policy. The answer is bad, and no setting fixes it.',
   },
   {
-    id: 'know',
-    heading: 'Worth knowing — there is nothing to switch off',
-    sub: 'Not a problem you can fix in settings. Something to know before you paste.',
-  },
-  {
     id: 'unclear',
     heading: "Their policy doesn't answer this",
     sub: 'We read it. This is a gap in their policy, not in ours.',
   },
   {
     id: 'unread',
-    heading: "Not read yet — we haven't looked at these",
-    sub: 'We are not going to guess. These rows are empty until someone reads them.',
+    heading: "We haven't read this yet",
+    // Exact string, per the ruling, and load-bearing: it is the entire reason
+    // coverage exists as a metric. A row we have not read is not a row with
+    // bad answers, and the interface must never let it be read as one.
+    sub: "We haven't read these yet. No values are assumed.",
   },
 ]
 
