@@ -49,7 +49,27 @@ function residencyPoints(residency) {
   return 0
 }
 
+/**
+ * READ and ANSWERED are different questions and the difference is the whole
+ * product.
+ *
+ *   read     — somebody opened the policy and recorded what it said. It has a
+ *              source. Nothing else counts.
+ *   answered — read, AND the page actually addressed this field. A policy that
+ *              is silent is a real answer, but it is not a yes.
+ *
+ * A field with no source has NOT been read, whatever value the seeded dataset
+ * happens to carry. Counting it as answered gave unread rows a coverage of
+ * 100% and a score built entirely out of guesses — the laundering this site
+ * exists to prevent, rendered as a full bar.
+ */
+function isRead(field) {
+  return Boolean(field?.source)
+}
+
 function isAnswered(fieldKey, field) {
+  // A field nobody has read cannot have been answered by anybody.
+  if (!isRead(field)) return false
   if (fieldKey === 'residency') {
     return Boolean(field.hq_jurisdiction) && Array.isArray(field.regions) && field.regions.length > 0
   }
@@ -65,6 +85,7 @@ export function scoreTool(tool) {
   const unknowns = []
   let score = 0
   let answered = 0
+  let read = 0
 
   for (const key of FIELD_ORDER) {
     const field = tool.fields[key]
@@ -80,28 +101,43 @@ export function scoreTool(tool) {
       points = POINTS[key]?.[value] ?? 0
     }
 
+    const readNow = isRead(field)
     const answeredNow = isAnswered(key, field)
+    if (readNow) read += 1
     if (answeredNow) answered += 1
     else unknowns.push(key)
 
-    score += points
+    // Points only from fields somebody actually read. An unread field still
+    // carries a seeded value, and scoring it would publish a number derived
+    // from nothing as though it were a measurement.
+    const pointsCounted = readNow ? points : 0
+    score += pointsCounted
+
     breakdown.push({
       key,
       label: FIELDS[key].label,
-      value,
-      points,
+      value: readNow ? value : null,
+      points: pointsCounted,
       max,
+      read: readNow,
       answered: answeredNow,
-      tone: answeredNow ? (FIELDS[key].options[value]?.tone ?? 'mixed') : 'unknown',
+      tone: !readNow ? 'unknown' : answeredNow ? (FIELDS[key].options[value]?.tone ?? 'mixed') : 'unknown',
     })
   }
 
   return {
     score,
     max: MAX_TOTAL,
+    // ANSWERED, as a percentage of every field we track.
     coverage: Math.round((answered / FIELD_ORDER.length) * 100),
     answered,
+    // READ, separately, because a row can be fully read and half answered.
+    // Showing only one number is how "we finished" and "they answered" get
+    // confused with each other.
+    readCoverage: Math.round((read / FIELD_ORDER.length) * 100),
+    read,
     total: FIELD_ORDER.length,
+    fraction: `${read}/${FIELD_ORDER.length}`,
     breakdown,
     unknowns,
   }

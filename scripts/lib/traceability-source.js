@@ -660,6 +660,35 @@ export async function runSourceChecks() {
         : 'admin follows the founder flag'
   )
 
+  /* 21 — A row nobody has read cannot report a score.
+
+          Found while building the Phase 3 coverage bar: `isAnswered` checked
+          only that a value existed and was not 'unknown', so every unread row
+          reported 100% coverage and a score computed from seeded guesses. The
+          comparison page would have rendered a full bar for a tool nobody has
+          looked at — the laundering this site exists to prevent, drawn as a
+          progress bar.
+
+          READ and ANSWERED are now separate in scoreTool, and points only
+          accrue from fields with a source. This check is what stops the two
+          from being collapsed back together. */
+  const { scoreTool } = await import('../../src/lib/scoring.js')
+  const { TOOLS } = await import('../../src/data/tools.js')
+  const NEVER_READ_STATUSES = ['draft-unverified', 'observed']
+  const fabricatedRows = TOOLS.filter((t) => {
+    if (!NEVER_READ_STATUSES.includes(t.verification?.status)) return false
+    const s = scoreTool(t)
+    return s.read !== 0 || s.score !== 0 || s.coverage !== 0
+  })
+
+  push(
+    'A row nobody has read reports no score and no coverage',
+    fabricatedRows.length === 0,
+    fabricatedRows.length
+      ? `unread rows claiming coverage: ${fabricatedRows.map((t) => t.id).join(', ')}`
+      : `${TOOLS.filter((t) => NEVER_READ_STATUSES.includes(t.verification?.status)).length} unread rows all report 0 read, 0 answered, score 0`
+  )
+
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
   const { STATES, stateForField } = await import('../../src/lib/field-states.js')
