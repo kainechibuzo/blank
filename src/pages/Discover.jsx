@@ -167,6 +167,15 @@ export default function Discover() {
           Describe what you need in your own words. This translates your words into the comparison
           filters, then ranks with the same function the comparison page uses.
         </p>
+        {/* Stated because the opposite was assumed: someone submitted a site and
+            then went looking for it here. Discovery is a view over the assessed
+            providers only — it is not, and must not become, a second list that
+            user-submitted entries can join unscored. */}
+        <p className="mt-2 text-sm text-ink-faint">
+          It searches the {TOOLS.length} providers this project has assessed — rows read from a
+          policy and scored. Community-submitted sites are not in here and cannot be: they have no
+          score. They live in the <Link to="/directory" className="underline underline-offset-2 hover:text-ink">directory</Link>.
+        </p>
       </header>
 
       <Callout variant="rule" title="Hard rule, enforced in code">

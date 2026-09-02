@@ -83,6 +83,21 @@ export default function SubmissionList({ listings, onChanged, extra, className =
           </div>
           <p className="mt-1 truncate text-xs text-ink-faint">{l.url}</p>
 
+          {/* A pending listing has to say what is holding it up. Otherwise
+              "submitted but invisible" reads as a bug, when it is the ownership
+              check doing its job. */}
+          {l.status !== 'listed' && l.status !== 'delisted' && (
+            <p className="mt-2 rounded border-l-2 border-unknown/40 bg-unknown-soft/60 px-3 py-2 text-[11px] leading-relaxed text-ink-soft">
+              Not public yet. A listing appears in the directory only once the ownership tag on your
+              homepage is found — press <strong className="font-medium">Re-check snippet</strong>{' '}
+              after adding it. Current state: <strong className="font-medium">{l.snippet_state ?? 'unchecked'}</strong>
+              {l.snippet_state === 'missing' && ' — the tag was not found in the page.'}
+              {l.snippet_state === 'altered' && ' — a tag was found but its token does not match the one issued to you.'}
+              {l.snippet_state === 'unreachable' && ' — the page could not be fetched. Check it is publicly reachable and not blocking this site’s crawler.'}
+              {l.snippet_state === 'unchecked' && ' — the check has not run yet.'}
+            </p>
+          )}
+
           {extra?.(l)}
 
           {/* Fixing a mistake is allowed for a day; asking to be re-checked is
