@@ -275,8 +275,9 @@ export const TOOLS = [
     blurb: 'Answer engine that cites web sources, with free and paid tiers, a browser, and enterprise and API offerings.',
     fields: {
       trains_on_data: {
-        value: 'yes',
-        note: 'The notice lists improving and creating services, including its AI models, among the uses of user content, and documents no general opt-out. Incognito stops activity being saved across sessions but is not stated to stop training. Email-assistant content is explicitly excluded from training.',
+        value: 'unknown',
+        source: 'https://www.perplexity.ai/hub/legal/privacy-notice',
+        note: 'Not established by the pages read for this row. The consumer notice lists improving or creating services and products, including its AI models, among its purposes for using data, but does not state whether consumer queries train models by default, nor describe an opt-out. One narrow promise is made: the Email Assistant feature does not use the content of your email to create, train, improve or fine-tune models.',
       },
       human_review: {
         value: 'unknown',
@@ -288,13 +289,15 @@ export const TOOLS = [
       },
       deletion: {
         value: 'request',
-        note: 'Deletion is described as a right exercised by contacting Perplexity, subject to identity verification and legal carve-outs. In-product deletion of individual threads is not documented in the notice.',
+        source: 'https://www.perplexity.ai/hub/legal/privacy-notice',
+        note: 'Deletion is framed as a request: you may ask Perplexity to delete your personal data, and it says it will grant the request where the law requires. It warns that in many cases it must keep data to comply with legal obligations, resolve disputes, enforce agreements or for other business purposes. No in-product delete control was described on the page read.',
       },
       residency: {
-        hq_jurisdiction: 'US',
+        hq_jurisdiction: "US",
         eu_option: false,
-        regions: ['US'],
-        note: 'Data moves between affiliates worldwide and may be processed in countries with less stringent laws. The company is certified under the EU-US Data Privacy Framework and will supply standard contractual clauses on request.',
+        regions: ["US"],
+        source: 'https://www.perplexity.ai/hub/legal/privacy-notice',
+        note: 'Perplexity AI, Inc. is a US company and the notice is written around US state privacy law, including a California notice at collection. Where personal data is stored or processed was not stated on the pages read.',
       },
       free_tier: {
         value: 'unknown',
@@ -302,14 +305,16 @@ export const TOOLS = [
       },
       enterprise_api: {
         value: 'separate',
-        note: 'The notice explicitly does not apply to the Enterprise and API offerings, where Perplexity acts as a service provider or processor. Those terms were not read in this pass.',
+        source: 'https://www.perplexity.ai/hub/legal/privacy-notice',
+        note: 'The consumer notice explicitly does not apply to the Enterprise and API offerings, where Perplexity says it acts as a service provider or processor. Those are documented separately; no statement about training on API data was read for this row.',
       },
     },
     verification: {
-      status: 'draft-unverified',
-      last_verified: null,
-      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
-      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+      status: 'partially-verified',
+      last_verified: '2026-09-02',
+      reviewer: 'policy pages read on the recorded date',
+      method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
+      note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: trains_on_data, retention, human_review, free_tier.',
     },
     policy_sources: [
       { label: 'Privacy notice', url: 'https://www.perplexity.ai/hub/legal/privacy-notice' },
@@ -474,25 +479,30 @@ export const TOOLS = [
     fields: {
       trains_on_data: {
         value: 'opt-out-available',
-        note: 'Mistral lists model training as a purpose covering your input and output, subject to an opt-out, and provides an in-account control to object to training use directly.',
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'The purposes table lists training its models on your Input and Output, marked subject to your opt-out. A user control lets you object to the use of your input and output for model training directly from your account. Mistral warns that rights over data already used to train models have technical limits and may need a complex process.',
       },
       human_review: {
         value: 'conditional',
-        note: 'Input and output are processed for moderation and abuse monitoring, and authorised team members may access personal data to do their jobs. The policy does not describe routine review of conversations.',
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'Authorised team members may access personal data where they need it to do their jobs, and Input, Output and Feedback are listed as used for moderation and abuse monitoring and for enforcing the terms. It does not describe routine reading of ordinary conversations.',
       },
       retention: {
         value: 'stated',
-        note: 'Input and output are kept until you delete the conversation or the account. API input and output are kept for 30 rolling days for abuse monitoring unless zero data retention is enabled. Separate legal periods apply, including five years for identity data after termination and ten for invoices.',
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'Input and Output in the consumer product are kept until you delete the conversation or your account. API inputs and outputs are kept for 30 rolling days for abuse monitoring unless zero data retention is switched on. Longer legal periods apply to identity data (5 years after termination), account data (1 year), invoices (10 years) and privacy requests (6 years).',
       },
       deletion: {
         value: 'self-serve',
-        note: 'In-account controls allow deleting the account and conversations, exporting data, and objecting to training use. Mistral notes that requests touching model training have technical limits.',
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'A user control allows deleting the account at any time, and another allows exporting your data at any time, both from the account. Individual conversations can be deleted from the product. Rights can also be exercised by form or post.',
       },
       residency: {
-        hq_jurisdiction: 'EU',
+        hq_jurisdiction: "EU",
         eu_option: true,
-        regions: ['EU'],
-        note: 'Mistral AI is a French company based in Paris. It prioritises providers inside the EU, permits non-EU ones in exceptional cases, and attaches standard contractual clauses to those contracts.',
+        regions: ["EU"],
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'Mistral AI is a French company established in Paris and the policy is built around the GDPR, with the CNIL named as its regulator. It says it prioritises providers inside the European Union, and where data does leave the EU it applies Standard Contractual Clauses under Article 46.',
       },
       free_tier: {
         value: 'unknown',
@@ -500,14 +510,16 @@ export const TOOLS = [
       },
       enterprise_api: {
         value: 'separate',
-        note: 'The policy does not apply when the products are used in a business context, where the customer is the controller and Mistral is the processor. Separate commercial terms and a data processing addendum exist but were not read in this pass.',
+        source: 'https://legal.mistral.ai/terms/privacy-policy',
+        note: 'Business use sits outside this policy: the customer is the controller and Mistral the processor. The API is also given its own retention rules, including an abuse-monitoring window of 30 rolling days that can be switched off with zero data retention. No blanket no-training promise for API data was read for this row.',
       },
     },
     verification: {
-      status: 'draft-unverified',
-      last_verified: null,
-      reviewer: 'agent-assisted first pass (pages read by hand, no LLM extraction)',
-      method: 'linked policy pages read on the recorded date; values paraphrased, nothing quoted verbatim',
+      status: 'partially-verified',
+      last_verified: '2026-09-02',
+      reviewer: 'policy pages read on the recorded date',
+      method: 'linked pages read by hand; values paraphrased, nothing quoted verbatim',
+      note: 'Fields carrying a source were read and confirmed on 2026-09-02. Not established in this pass: free_tier.',
     },
     policy_sources: [
       { label: 'Privacy policy', url: 'https://legal.mistral.ai/terms/privacy-policy' },

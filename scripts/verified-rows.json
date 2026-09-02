@@ -22,7 +22,13 @@
       "note": "Account data controls allow deleting or archiving individual chats and deleting the account outright, plus exporting history. Statutory rights can also be exercised through the privacy portal or by email, but the everyday route is a control in the product."
     },
     "residency": {
-      "value": { "hq_jurisdiction": "US", "eu_option": false, "regions": ["US"] },
+      "value": {
+        "hq_jurisdiction": "US",
+        "eu_option": false,
+        "regions": [
+          "US"
+        ]
+      },
       "source": "https://openai.com/policies/privacy-policy/",
       "note": "Personal data is processed on servers in the United States and in other countries where OpenAI, its affiliates, partners and vendors operate. Separate EEA, UK and Swiss versions of the policy exist. No EU-specific data residency option for consumers was found in this pass."
     },
@@ -39,7 +45,9 @@
   },
   "claude": {
     "_verdict": "partially-verified",
-    "_unverified": ["residency"],
+    "_unverified": [
+      "residency"
+    ],
     "trains_on_data": {
       "value": "opt-in-only",
       "source": "https://privacy.anthropic.com/en/articles/10023555-how-do-you-use-personal-data-in-model-training",
@@ -69,6 +77,83 @@
       "value": "separate-no-training",
       "source": "https://www.anthropic.com/legal/privacy",
       "note": "The consumer privacy policy explicitly does not apply where Anthropic processes data on behalf of commercial customers; the customer is the controller and their own agreement governs. Commercial offerings are documented separately in the privacy centre."
+    }
+  },
+  "perplexity": {
+    "_verdict": "partially-verified",
+    "_unverified": [
+      "trains_on_data",
+      "retention",
+      "human_review",
+      "free_tier"
+    ],
+    "trains_on_data": {
+      "value": "unknown",
+      "source": "https://www.perplexity.ai/hub/legal/privacy-notice",
+      "note": "Not established by the pages read for this row. The consumer notice lists improving or creating services and products, including its AI models, among its purposes for using data, but does not state whether consumer queries train models by default, nor describe an opt-out. One narrow promise is made: the Email Assistant feature does not use the content of your email to create, train, improve or fine-tune models."
+    },
+    "deletion": {
+      "value": "request",
+      "source": "https://www.perplexity.ai/hub/legal/privacy-notice",
+      "note": "Deletion is framed as a request: you may ask Perplexity to delete your personal data, and it says it will grant the request where the law requires. It warns that in many cases it must keep data to comply with legal obligations, resolve disputes, enforce agreements or for other business purposes. No in-product delete control was described on the page read."
+    },
+    "residency": {
+      "value": {
+        "hq_jurisdiction": "US",
+        "eu_option": false,
+        "regions": [
+          "US"
+        ]
+      },
+      "source": "https://www.perplexity.ai/hub/legal/privacy-notice",
+      "note": "Perplexity AI, Inc. is a US company and the notice is written around US state privacy law, including a California notice at collection. Where personal data is stored or processed was not stated on the pages read."
+    },
+    "enterprise_api": {
+      "value": "separate",
+      "source": "https://www.perplexity.ai/hub/legal/privacy-notice",
+      "note": "The consumer notice explicitly does not apply to the Enterprise and API offerings, where Perplexity says it acts as a service provider or processor. Those are documented separately; no statement about training on API data was read for this row."
+    }
+  },
+  "le-chat": {
+    "_verdict": "partially-verified",
+    "_unverified": [
+      "free_tier"
+    ],
+    "trains_on_data": {
+      "value": "opt-out-available",
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "The purposes table lists training its models on your Input and Output, marked subject to your opt-out. A user control lets you object to the use of your input and output for model training directly from your account. Mistral warns that rights over data already used to train models have technical limits and may need a complex process."
+    },
+    "human_review": {
+      "value": "conditional",
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "Authorised team members may access personal data where they need it to do their jobs, and Input, Output and Feedback are listed as used for moderation and abuse monitoring and for enforcing the terms. It does not describe routine reading of ordinary conversations."
+    },
+    "retention": {
+      "value": "stated",
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "Input and Output in the consumer product are kept until you delete the conversation or your account. API inputs and outputs are kept for 30 rolling days for abuse monitoring unless zero data retention is switched on. Longer legal periods apply to identity data (5 years after termination), account data (1 year), invoices (10 years) and privacy requests (6 years)."
+    },
+    "deletion": {
+      "value": "self-serve",
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "A user control allows deleting the account at any time, and another allows exporting your data at any time, both from the account. Individual conversations can be deleted from the product. Rights can also be exercised by form or post."
+    },
+    "residency": {
+      "value": {
+        "hq_jurisdiction": "EU",
+        "eu_option": true,
+        "regions": [
+          "EU"
+        ]
+      },
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "Mistral AI is a French company established in Paris and the policy is built around the GDPR, with the CNIL named as its regulator. It says it prioritises providers inside the European Union, and where data does leave the EU it applies Standard Contractual Clauses under Article 46."
+    },
+    "enterprise_api": {
+      "value": "separate",
+      "source": "https://legal.mistral.ai/terms/privacy-policy",
+      "note": "Business use sits outside this policy: the customer is the controller and Mistral the processor. The API is also given its own retention rules, including an abuse-monitoring window of 30 rolling days that can be switched off with zero data retention. No blanket no-training promise for API data was read for this row."
     }
   }
 }
