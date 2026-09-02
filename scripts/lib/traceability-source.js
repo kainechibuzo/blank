@@ -672,16 +672,32 @@ export async function runSourceChecks() {
     await walk('src/components'),
     await walk('src/lib')
   )
+  /* Only a colour CLASS counts — a file that names the NO_REMEDY state without
+     colouring anything is not the risk. The risk is a second thing on the site
+     turning orange, which is why the list is explicit and adding to it is a
+     deliberate act rather than a side effect. */
   const ORANGE_OK = [
-    'src/styles.css',
-    'src/lib/field-states.js',
-    'src/components/FieldState.jsx',
+    'src/styles.css', // defines the token
+    'src/lib/field-states.js', // declares the tone
+    'src/components/FieldState.jsx', // renders one fact
+    'src/components/ColourLegend.jsx', // renders the legend
+    'src/components/ToolResultCard.jsx', // renders a card's consequence
     'src/pages/DevStates.jsx', // the sheet renders every state, by necessity
   ]
   for (const rel of orangeFiles) {
     if (ORANGE_OK.includes(rel)) continue
     const body = stripComments(await read(rel).catch(() => ''))
-    if (/noremedy/i.test(body)) breaches.push(`orange used outside the reserved files (${rel})`)
+    if (/(text|bg|border)-noremedy\b/.test(body)) {
+      breaches.push(`orange colour used outside the reserved files (${rel})`)
+    }
+  }
+  // And a file that colours something orange must be about that state: no
+  // orange as decoration.
+  for (const rel of ORANGE_OK) {
+    const body = stripComments(await read(rel).catch(() => ''))
+    if (/(text|bg|border)-noremedy\b/.test(body) && !/no[-_ ]?remedy/i.test(body)) {
+      breaches.push(`${rel} uses the orange colour with no reference to the state`)
+    }
   }
 
   // 4. The four NO_REMEDY sentences are the approved strings verbatim. They are
