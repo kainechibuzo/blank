@@ -622,11 +622,12 @@ export async function runSourceChecks() {
           the Phase 2/5 briefs inherit the eight while listing seven labels.
           Hardcoding "8 facts each" would be a claim about our own data that is
           simply false, in the footer, where the credibility claims live. */
-  const countClaimFiles = ['src/components/SiteFooter.jsx', 'src/pages/Home.jsx']
   const hardcodedCounts = []
-  for (const rel of countClaimFiles) {
+  for (const rel of (await walk('src/pages')).concat(await walk('src/components'))) {
     const code = stripComments(await read(rel).catch(() => ''))
-    if (/\b8\s*(facts|fields)\b/i.test(code)) hardcodedCounts.push(rel)
+    if (/\b\d+\s*(facts|fields)\s*(each|per|tracked)?\b/i.test(code)) {
+      hardcodedCounts.push(rel)
+    }
   }
   const schemaForCount = await import('../../src/data/schema.js')
   push(
@@ -635,6 +636,28 @@ export async function runSourceChecks() {
     hardcodedCounts.length
       ? `hardcoded "8 facts" in ${hardcodedCounts.join(', ')}`
       : `FIELD_ORDER has ${schemaForCount.FIELD_ORDER.length} fields and the chrome quotes that number`
+  )
+
+  /* 20 — The founder flag still renders an Admin link in the nav.
+
+          Added after the Phase 2 header rebuild dropped it. A check that only
+          appears once a regression has already happened is still worth having:
+          header rebuilds are not done, and the next one will do it again.
+
+          The assertion is symmetric rather than one-directional — if isFounder
+          is consulted, the link must exist, and if there is no founder flag
+          there should be no stray admin link either. */
+  const headerSrc = stripComments(await read('src/components/SiteHeader.jsx').catch(() => ''))
+  const usesFounder = /isFounder/.test(headerSrc)
+  const hasAdminLink = /\/admin/.test(headerSrc)
+  push(
+    'The founder flag still renders an Admin link in the nav',
+    usesFounder === hasAdminLink,
+    usesFounder && !hasAdminLink
+      ? 'isFounder is consulted but no /admin link remains — a header rebuild dropped it again'
+      : !usesFounder && hasAdminLink
+        ? 'an /admin link sits in the nav with no founder gate on it'
+        : 'admin follows the founder flag'
   )
 
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
