@@ -4,13 +4,17 @@ What a single tracked fact can be in, what the interface says when it is in that
 state, and whether it counts as progress.
 
 This file is the contract for Phase 4. Every component composes from
-`<FieldState />`, and `<FieldState />` has exactly five cases plus two row-level
-roll-ups. If a component assumes a field is populated, it is wrong, because two
-of the five states are precisely "it is not".
+`<FieldState />`, and `<FieldState />` has exactly four cases plus one row-level
+roll-up. If a component assumes a field is populated, it is wrong, because two
+of the four states are precisely "it is not".
+
+**Signed off 2 Sep 2026.** Two decisions are recorded in this file:
+`stale` is dropped (four states, not five), and Coverage is reported as two
+fractions rather than one number.
 
 ---
 
-## The five states
+## The four states
 
 A state describes **one field on one tool**. `partially-verified` is not a field
 state — it is what a row says when its fields are in a mixture.
@@ -58,30 +62,7 @@ and no one has checked it. This is the majority of the database today.
 | **Counts as read** | **no** |
 | **Counts as answered** | no |
 
-### 4. `stale`
-
-Was `verified`, then the watchdog saw the page change, and nobody has re-read it
-since. The value is still shown because it was true once, and it is labelled as
-no longer confirmed.
-
-| | |
-| --- | --- |
-| **Renders** | `Read 1 Jun 2026 — page changed 14 Aug, needs re-read` |
-| **Glyph** | ↻ |
-| **Style** | neutral, with the previous date still legible. Degrades from verified, never from unknown. |
-| **Counts as read** | yes (it was read; the reading is out of date) |
-| **Counts as answered** | yes, but the score it feeds is marked provisional |
-
-> **Open — flagged in Phase 1, not fixed here.** `stale` is declared in
-> `src/data/schema.js` but **no code path can currently set it**. The weekly
-> policy observer opens a GitHub issue; it never writes to the dataset, by
-> design. So until something closes that loop, `stale` is unreachable and the
-> fourth state exists only on paper. Options: (a) have the observer open a PR
-> flipping the row to `stale`, (b) have a human flip it during review, (c) drop
-> the state. Needs a decision before Phase 4, because it changes what
-> `<FieldState />` has to render.
-
-### 5. `disputed`
+### 4. `disputed`
 
 A credible correction is under assessment. The row stays visible and flagged.
 
@@ -95,7 +76,29 @@ A credible correction is under assessment. The row stays visible and flagged.
 
 ---
 
-## Two row-level roll-ups
+## Dropped: `stale`
+
+**Decision: not a state.** It was going to be "was verified, then the page
+changed". It is dropped for three reasons:
+
+- Nothing can set it. The weekly observer opens an issue and, by design, never
+  writes to the dataset. A state that no code path can produce is not a state.
+- Age already says it. A `verified` field carries the date it was read, and the
+  shelf-life rules already act on that date (re-read at 90 days, amber past 60,
+  red past 120). "Verified on 1 Jun, page changed in August" and "verified on
+  1 Jun" are the same fact once the date is visible.
+- Two mechanisms for one idea guarantees they disagree.
+
+So freshness is a property of the date on a `verified` field, not a fifth state.
+`<FieldState />` has four cases.
+
+> Follow-up for Phase 5: `stale` remains declared in `src/data/schema.js` and
+> referenced in `src/lib/traceability.js`. With the state dropped it should be
+> removed from both, so nothing can render a case the taxonomy does not have.
+
+---
+
+## One row-level roll-up
 
 ### `partially-verified`
 
@@ -107,48 +110,46 @@ metric exists to prevent.
 ### Where `observed` goes
 
 The policy observer's state (`observed` — a script fetched the page, no human
-read it) is **not** a sixth display state. It renders as `not read yet`, because
+read it) is **not** a fifth display state. It renders as `not read yet`, because
 from the reader's point of view the position is identical: no person has
 confirmed this. The fetch is recorded in `data/policy-hashes.json` and surfaces
 in `/admin`, not on a public field.
 
 ---
 
-## Counting: the one thing I need signed off
+## Counting: two fractions, both shown
 
-There are two different questions, and today the site only asks one:
+**Decision: report both.** They answer different questions and one number cannot
+do both.
 
 | metric | question | counts `unknown`? | counts `not read yet`? |
 | --- | --- | --- | --- |
 | **Read** | how much of this row have we actually looked at? | **yes** | no |
 | **Answered** | how much does the policy actually tell us? | no | no |
 
-`src/lib/scoring.js` currently computes only the second and calls it Coverage:
-`answered / 7`, where `unknown` is not answered. So today, Perplexity reads
-`score 16 · coverage 43%`.
+Every card, table row and detail header shows both, as fractions rather than
+percentages, because a fraction says what it is counting:
 
-You asked for `unknown` to count toward Coverage. It is the right instinct — a
-row we have read and found silent is genuinely further along than a row nobody
-has opened — but folding it in has a cost worth naming:
+```
+16 pts        4/7 read        3/7 answered
+```
 
-- **If Coverage = Read**, Perplexity shows `57%` and the number stops
-  distinguishing *"the policy is silent"* from *"we haven't looked"*. That
-  distinction is currently the site's answer to "is this provider bad, or is
-  this row incomplete?" — coverage is what stops a low score from reading as a
-  verdict.
-- **If the two stay separate**, the card shows both: `16 pts · 4/7 read · 3/7
-  answered`. More numbers, but each one means something and neither can be
-  mistaken for the other.
+A row we have read and found silent scores low on both the score and
+*answered*, but full marks on *read* — which is the difference between "this
+provider is opaque" and "we haven't finished". Collapsing them would let a
+half-read row look like a half-answered one, and that is precisely the
+laundering this product exists to prevent.
 
-**My recommendation: keep both, and show both.** Read answers "do we know?",
-Answered answers "does the policy say?". One number cannot answer both, and
-collapsing them is how a transparency product ends up laundering silence as
-progress. If you want one number, I will fold them and Coverage becomes Read —
-say so and I will.
+- `verified`, `unknown`, `disputed` count as read.
+- `verified`, `disputed` count as answered; `unknown` does not.
+- `not read yet` counts as neither.
+
+The existing `coverage` figure in `src/lib/scoring.js` is *answered*. Phase 3
+adds *read* alongside it and Phase 4 renders both.
 
 ---
 
-## Rules that apply to all five
+## Rules that apply to all four
 
 - **Colour never carries the meaning.** Shape does. No field is red or green
   because a provider is bad or good; that is what the score is for, and mixing
