@@ -146,6 +146,8 @@ node scripts/check-policy-hashes.mjs --only=chatgpt`}
             ['1. Collect', 'Record the policy pages that govern the product, per tier. Enterprise and consumer terms are often different documents.'],
             ['2. Extract', 'LLM-assisted pass over each page to fill the eight fields. Output is a draft, never a publication.'],
             ['3. Verify', 'A human reads the source, confirms or corrects each field, and signs the row. Only now can a date be attached.'],
+// NOTE: 'stale' here is the watchdog concept, not the FieldState component
+// (dropped eb76712). Reconcile at Phase 5.
             ['4. Watch', 'Weekly hash check. A change queues re-extraction and re-verification; the date resets or the row is marked stale.'],
           ].map(([title, body]) => (
             <li key={title} className="rounded-lg border border-line bg-white p-4">

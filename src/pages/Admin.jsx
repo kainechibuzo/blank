@@ -133,6 +133,8 @@ export default function Admin() {
         (n, r) => n + Object.values(r.t.fields).filter((f) => f?.value === 'unknown').length,
         0
       ),
+// NOTE: 'stale' here is the watchdog concept, not the FieldState component
+// (dropped eb76712). Reconcile at Phase 5.
       stale: rows.filter((r) => r.age.state === 'stale').length,
       rows,
     }

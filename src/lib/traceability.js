@@ -150,6 +150,10 @@ export function runTraceabilityChecks() {
   )
 
   /* 6 — Verification honesty.
+
+        NOTE: 'stale' mentioned below is the watchdog concept, not the
+        FieldState component state (dropped eb76712). Reconcile at Phase 5.
+
         A date means "a person read this row". It is fabricated when it sits on
         a row that has never been read. `stale` and `disputed` keep the date
         from the reading that actually happened, so they are not fabrication. */

@@ -41,6 +41,8 @@ export const VERIFICATION_STATUSES = {
     tone: 'good',
     blurb: 'Read by a human reviewer and confirmed against the linked policy on the stated date.',
   },
+  // NOTE: 'stale' here is the watchdog concept, not the FieldState component
+  // state (dropped eb76712). Reconcile at Phase 5.
   stale: {
     label: 'Stale — needs re-check',
     tone: 'mixed',

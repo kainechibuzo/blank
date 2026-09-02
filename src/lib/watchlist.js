@@ -6,6 +6,9 @@
  * unverified. A real alerting tier needs an email address and a cron job; this
  * needs neither and still tells you the useful thing ("this row is 214 days
  * old, treat it as unconfirmed").
+ *
+ * NOTE: 'stale' here is the watchdog concept, not the FieldState component
+ * state (dropped eb76712). Reconcile at Phase 5.
  */
 
 const KEY = 'wt.watchlist.v1'
