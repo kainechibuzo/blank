@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { planQuery } from '../lib/chat.js'
-import { COMPARE_FILTERS, COMPARE_FILTER_IDS } from '../lib/compare.js'
+import { COMPARE_FILTERS, retainKnownFilters } from '../lib/compare.js'
 
 /**
  * DescribeBox — say what you need in your own words, then see exactly what we
@@ -40,12 +40,10 @@ export default function DescribeBox({ active, derived, onApply, onRemove }) {
     // so both shapes are read the same way here.
     const filters = plan.kind === 'ask' ? (plan.partial?.filters ?? []) : (plan.filters ?? [])
 
-    /* The lexicon knows more filters than this page offers — `free_tier_exists`
-       and `enterprise_no_training` among them. A chip outside the five would
-       render with its raw id, and could not be re-ticked once removed, because
-       the rail does not contain it. So derived filters are restricted to the
-       same vocabulary the checkboxes speak. */
-    const usable = filters.filter((id) => COMPARE_FILTER_IDS.includes(id))
+    /* The lexicon knows more filters than this page offers. Anything outside
+       the five is dropped here — not rendered as a chip, and not applied to the
+       query — by retainKnownFilters. */
+    const usable = retainKnownFilters(filters)
 
     /* A provenance string, stored whole rather than assembled at render time,
        because assembling it later is how the use-case form ends up wearing the
@@ -54,7 +52,6 @@ export default function DescribeBox({ active, derived, onApply, onRemove }) {
     for (const id of usable) nextDerived[id] = 'inferred from your wording'
 
     for (const m of plan.matched ?? []) {
-      if (!COMPARE_FILTER_IDS.includes(m.filterId)) continue
       nextDerived[m.filterId] = `matched “${m.terms.join('”, “')}”`
     }
 
@@ -64,7 +61,6 @@ export default function DescribeBox({ active, derived, onApply, onRemove }) {
     // is entitled to see and reject.
     if (plan.useCase) {
       for (const f of plan.useCase.filters ?? []) {
-        if (!COMPARE_FILTER_IDS.includes(f)) continue
         if (nextDerived[f] === 'inferred from your wording') {
           nextDerived[f] = `inferred from “${plan.useCase.label}”`
         }

@@ -202,7 +202,7 @@ export const FILTERS = [
   {
     id: 'no_human_review',
     group: 'Data use',
-    label: 'No human review',
+    label: 'No human review of conversations',
     help: 'No person reads conversations as a matter of routine.',
     matches: (t) => t.fields.human_review.value === 'no',
   },
@@ -216,14 +216,14 @@ export const FILTERS = [
   {
     id: 'self_serve_deletion',
     group: 'Your rights',
-    label: 'You can delete it yourself',
+    label: 'Data can be fully deleted',
     help: 'Deletion is a control in the product, not a favour you ask for.',
     matches: (t) => t.fields.deletion.value === 'self-serve',
   },
   {
     id: 'eu_residency',
     group: 'Jurisdiction',
-    label: 'EU/UK data option',
+    label: 'Data stays in Europe',
     help: 'Provider is EU/UK-established or offers EU/UK data residency.',
     matches: (t) => t.fields.residency.eu_option === true,
   },
@@ -237,7 +237,7 @@ export const FILTERS = [
   {
     id: 'real_free_tier',
     group: 'Commercials',
-    label: 'Real free tier, same policy',
+    label: 'Free plan has the same rules as paid',
     help: 'A free tier exists and is governed by the same terms as paid.',
     matches: (t) => t.fields.free_tier.value === 'same-policy',
   },

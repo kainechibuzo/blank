@@ -244,3 +244,18 @@ the promise is made.
 - `no-remedy` — we read the policy, the answer is bad, no setting fixes it.
 - `unclear` — we read the policy and it does not address this. Their gap, not ours.
 - `unread` — we have not looked. Our gap, and we say so.
+
+### Unread rows and filtered results
+
+**Unread rows are excluded from filtered results entirely. A filter cannot be
+satisfied by a value nobody has confirmed.**
+
+A filter is a claim about what a policy says. An unread row carries seeded
+values that nobody has checked against anything, so matching on them would
+report a tool as satisfying "Doesn't train on your data" on the strength of a
+guess. This is the same laundering as the coverage bug, one layer down, and it
+is why unread rows vanish the moment a filter is switched on elsewhere on the
+site while remaining visible when nothing is filtered.
+
+The count is always stated. People will ask why the rows disappear; this is the
+answer, and it had to be findable.

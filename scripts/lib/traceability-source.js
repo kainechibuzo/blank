@@ -706,6 +706,22 @@ export async function runSourceChecks() {
       : `${TOOLS.filter((t) => NEVER_READ_STATUSES.includes(t.verification?.status)).length} unread rows all report 0 read, 0 answered, score 0`
   )
 
+  /* 22 — Filter labels are claims about the tool, not about the reader.
+          "Doesn't train on your data" is something we can be wrong about and be
+          corrected on. "My data isn't used for training" is marketing copy, and
+          it is the reader who pays when it is wrong. First person has no place
+          in a filter label, on any page, in any context — the bottom sheet, the
+          chips, the chat flow. */
+  const { FILTERS } = await import('../../src/data/schema.js')
+  const firstPerson = (FILTERS ?? []).filter((f) => /^(My\b|I\b|I')/.test(f.label ?? ''))
+  push(
+    'No filter label is written in the first person',
+    firstPerson.length === 0,
+    firstPerson.length
+      ? `first-person filter labels: ${firstPerson.map((f) => `"${f.label}"`).join(', ')}`
+      : `${(FILTERS ?? []).length} filter labels, all third-person claims about the tool`
+  )
+
   const fsSrc = stripComments(await read('src/components/FieldState.jsx').catch(() => ''))
   const fsLib = stripComments(await read('src/lib/field-states.js').catch(() => ''))
   const { STATES, stateForField } = await import('../../src/lib/field-states.js')

@@ -95,9 +95,28 @@ close enough. Re-read this section before doing any of those.
 
 ---
 
-## Still open
+## The parse step today (recorded 2 Sep 2026)
 
-Whether the parse calls a model at all on launch. A keyword match over filter
-ids would cover most real queries, costs nothing, and can run offline. The
-model earns its place only if it measurably beats that on real queries — which
-is a Phase 4 question, not a Phase 1 one.
+**The parse step currently uses `planQuery` — a keyword lexicon, no model.**
+
+A model is permitted here under the boundary above, and is not required. The
+lexicon was chosen because it costs nothing, runs offline, needs no key to
+rotate, and adds no outbound call to audit — and because it can name the phrase
+behind every chip, which is what the "check its working" promise actually asks
+for.
+
+### The constraint that survives a swap
+
+> **Every chip must name the phrase that derived it.**
+>
+> This applies regardless of whether a model or a lexicon does the parsing.
+
+That requirement is the reason the parse step is bounded at all. If a model
+replaces the lexicon and cannot say which words produced which filter, the
+feature has got worse while getting more expensive: the audit surface is the
+product, and a parse that cannot show its reasoning is not a parse this site
+can use.
+
+Everything downstream of the parse sees only filter ids. Swapping the lexicon
+for a model is therefore a local change to one function, provided the new one
+returns the matched phrases with the same honesty `planQuery` does today.

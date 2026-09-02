@@ -1,29 +1,50 @@
-import { FIELD_ORDER } from '../data/schema.js'
+import { FIELD_ORDER, FILTER_BY_ID } from '../data/schema.js'
 import { scoreTool } from './scoring.js'
 import { groupTools } from './consequence.js'
 
 /**
  * compare.js — the comparison page's view of the data.
  *
- * Filters are written in the first person here because this is the one screen
- * where someone is answering for themselves: "My data isn't used for training"
- * is a thing you can answer yes or no about yourself, where "Doesn't train on
- * your data" is a thing you have to translate first. Elsewhere the neutral
- * third-person labels stay as they are.
+ * Filter labels are read straight from schema.js, never restated here. One
+ * label per filter, in the factual register, everywhere it appears — the
+ * comparison page, the mobile bottom sheet, the chips from "describe what you
+ * need", and the chat flow.
  *
- * The ids are the canonical filter ids from schema.js. Only the labels differ,
- * and "describe what you need" resolves back to those same ids — so a chip
- * derived from free text and a checkbox ticked by hand produce the same query.
+ * Third-person and present tense, because a filter is a claim about the tool,
+ * not about the reader. "Doesn't train on your data" is something we can be
+ * wrong about and be corrected on; "My data isn't used for training" is
+ * marketing copy, and it is the reader who pays if it is wrong.
  */
 export const COMPARE_FILTERS = [
-  { id: 'no_training', label: "My data isn't used for training" },
-  { id: 'no_human_review', label: 'No human ever reads my chats' },
-  { id: 'self_serve_deletion', label: 'I can delete everything' },
-  { id: 'eu_residency', label: 'My data stays in Europe' },
-  { id: 'real_free_tier', label: 'Free plan has the same rules as paid' },
-]
+  'no_training',
+  'no_human_review',
+  'self_serve_deletion',
+  'eu_residency',
+  'real_free_tier',
+].map((id) => ({ id, label: FILTER_BY_ID[id]?.label ?? id }))
 
 export const COMPARE_FILTER_IDS = COMPARE_FILTERS.map((f) => f.id)
+
+/**
+ * The runtime guard.
+ *
+ * The lexicon behind "describe what you need" knows more filters than this page
+ * offers — `free_tier_exists`, `enterprise_no_training`. A filter outside the
+ * five cannot be rendered (it has no label here) and must not be applied (the
+ * reader would be filtered by something they cannot see or undo).
+ *
+ * So anything outside the five is dropped here, before chips are built and
+ * before the filters reach the query. The reader is not told we ignored part of
+ * their wording: it is an edge case, and "we ignored part of your query" is
+ * noise for someone who typed "cheap and fast".
+ *
+ * A runtime guard rather than a build check, because which filters a page
+ * offers is a UI decision, not a schema constraint — the schema is right to
+ * know about filters this page does not use.
+ */
+export function retainKnownFilters(ids) {
+  return (ids ?? []).filter((id) => COMPARE_FILTER_IDS.includes(id))
+}
 
 /** "Most recently verified" is deliberately absent: it orders by our workflow,
  *  not by anything a person reading the page is trying to find. */
