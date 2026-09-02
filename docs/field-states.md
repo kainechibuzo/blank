@@ -12,6 +12,27 @@ of the four states are precisely "it is not".
 `stale` is dropped (four states, not five), and Coverage is reported as two
 fractions rather than one number.
 
+**Amended 2 Sep 2026 (`eb76712`).** This file now carries two taxonomies side
+by side, and the distinction matters:
+
+- **Verification states** — `verified` / `unknown` / `not read yet` / `disputed`.
+  These answer *how confident are we*. They are what this document originally
+  described, and they are what the audit trail and the coverage fractions count.
+- **Consequence states** — `SAFE_BY_DEFAULT` / `OPT_OUT_EXISTS` / `NO_REMEDY` /
+  `UNKNOWN` / `NOT_READ_YET`. These answer *what does this mean for the person
+  reading it*. They are what `<FieldState />` renders, and they live in
+  `src/lib/field-states.js`.
+
+Two names collide across the two lists — `unknown` and `not read yet` — and they
+mean the same thing in both, which is why the collision took a while to notice.
+The other three consequence states have no verification counterpart: a field can
+be verified and still be `NO_REMEDY`. When you read a name in isolation, check
+which list it came from.
+
+The section at the end of this file covers the **six display groups**, which are
+neither of the above: they are how a screen sorts tools, not what a single field
+is.
+
 ---
 
 ## The four states
@@ -162,3 +183,64 @@ adds *read* alongside it and Phase 4 renders both.
 - **`unknown` is a sentence, not a shrug.** It renders as "Not stated in the
   policy" — an assertion about the page — never as "Unknown" alone, which reads
   as "we don't know" and is not the same claim.
+
+---
+
+## The six display groups
+
+**Signed off 2 Sep 2026 as part of the Phase 2 rulings.**
+
+A group is how a screen sorts **tools**. It is not a field state — `<FieldState />`
+still has exactly five cases, and that is correct. Groups are decided in
+`src/lib/consequence.js` by the worst state among the facts that matter for the
+current category or filter.
+
+The order below is canonical and applies to **every screen that groups tools**,
+including the result screen and the full comparison. Sorting never promotes a
+tool across a group boundary: a user sorting by score reorders within groups and
+nothing else.
+
+| # | Group | Heading on screen |
+| --- | --- | --- |
+| 1 | `safe` | Safe by default |
+| 2 | `know` | Worth knowing — nothing to switch off |
+| 3 | `opt-out` | Opt-out available — it's off by default though |
+| 4 | `no-remedy` | No remedy on this plan |
+| 5 | `unclear` | Their policy doesn't answer this |
+| 6 | `unread` | We haven't read this yet |
+
+### Why two of these were not in the brief
+
+**`unread` (6).** Fourteen of twenty rows have never been read. Filed under
+`unclear`, they would blame a provider for our own unfinished work — the exact
+failure the null-on-unmapped rule in Phase 1 exists to prevent. They collapse
+behind a disclosure on both screens, but **the count is always visible**, because
+how much of this site is unfinished is a fact about us, and it belongs on the
+page.
+
+> **Group header line, exact:** "We haven't read these yet. No values are assumed."
+>
+> That sentence is load-bearing. It is the entire reason coverage exists as a
+> metric: a row we have not read is not a row with bad answers, and the interface
+> must never let it be read as one.
+
+**`know` (2).** The state matrix routes several purely informational values to
+`OPT_OUT_EXISTS` — `retention: stated`, `free_tier: differs`, `enterprise_api: *`.
+That mapping is correct at the *value* layer and wrong at the *grouping* layer:
+grouped under "Opt-out available" they tell someone a setting exists, and for
+these it does not. The state contract is untouched; the promise is fixed where
+the promise is made.
+
+> **Group header, exact:** "Worth knowing — nothing to switch off"
+>
+> Not "Informational", not "FYI". Someone scanning fast understands the plain
+> English version without reading the body copy.
+
+### The rule each group implies
+
+- `safe` — nothing to do.
+- `know` — nothing to do, but something to know before you paste.
+- `opt-out` — there is a switch, and it ships in the wrong position.
+- `no-remedy` — we read the policy, the answer is bad, no setting fixes it.
+- `unclear` — we read the policy and it does not address this. Their gap, not ours.
+- `unread` — we have not looked. Our gap, and we say so.
